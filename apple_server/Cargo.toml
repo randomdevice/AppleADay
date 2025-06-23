@@ -1,0 +1,17 @@
+[package]
+name = "apple_server"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+axum = { version = "0.8", features = ["json"] }
+tokio = { version = "1", features = ["full"] }
+sqlx = { version = "0.8", features = ["runtime-tokio", "tls-rustls", "postgres"] }
+
+# For JSON serialization/deserialization (optional)
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Application tracing
+tracing = { version = "0.1", default-features = false }
+tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
