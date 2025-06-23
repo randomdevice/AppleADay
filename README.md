@@ -11,7 +11,7 @@ The following project is organized into several folders:
 
 This repository requires the following dependencies to be installed/setup in order to develop:
 
-- Cargo and Rust (for the server-side application) (install: [https://www.rust-lang.org/tools/install](https://www.rust-lang.org/tools/install)
+- Cargo and Rust (for the server-side application) (install: [https://www.rust-lang.org/tools/install](https://www.rust-lang.org/tools/install))
 - Node.js and npm (for the client-side application) (install: [https://nodejs.org/en/download](https://nodejs.org/en/download))
 - PostgreSQL (for the database) (testing in local instance for now)
 
