@@ -1,5 +1,5 @@
 use axum::response::Json;
-use serde_json::{json, Value};
+use serde_json::{json, Value, Map};
 use sqlx::{Executor, Row};
 
 // generic SQL executor, used by a concrete handler `list_tables_handler`
@@ -43,14 +43,164 @@ where
 
 	let results: Vec<Value> = rows.iter().map(|row| {
 		let state: String = row.try_get("state").unwrap_or_default();
-		let statecode: String = row.try_get("statecode").unwrap_or_default();
+		//let statecode: String = row.try_get("statecode").unwrap_or_default();
 		let overallpercentage: f64 = row.try_get("overallpercentage").unwrap_or_default();
 		json!({
 			"state": state,
-			"statecode": statecode,
 			"overallpercentage": overallpercentage 
 		})
 	}).collect();
 
-    Ok(axum::Json(json!(results)))
+    let mut result_map = Map::new();
+    for dict in results {
+        if let Value::Object(obj) = dict {
+            if let (Some(Value::String(state)), Some(percentage)) = (obj.get("state"), obj.get("overallpercentage"))
+            {
+                result_map.insert(state.clone(), percentage.clone());
+            }
+        }
+    }
+
+    Ok(axum::Json(Value::Object(result_map)))
+}
+
+pub async fn national_average_disease<'a, E>(
+        executor: E,
+        disease: Option<String> 
+    ) -> Result<Json<Value>, sqlx::Error>
+where
+    E: Executor<'a, Database = sqlx::Postgres>,
+{
+
+	let rows = sqlx::query(
+        "
+        SELECT
+            AVG(Percentage) as nationalAverage
+        FROM
+            ethnicityadjusteddiseasepopulation a JOIN ChronicDisease d ON a.disease = d.id
+        WHERE
+            SubType = $1
+            AND Percentage IS NOT NULL;
+        "
+        )
+        .bind(disease.unwrap_or("Diabetes".to_string())) 
+        .fetch_all(executor)
+        .await?; 
+
+     let result: Vec<Value> = rows.iter().map(|row| {
+        let nationalaverage: f64 = row.try_get("nationalaverage").unwrap_or_default();
+        json!({ "nationalaverage": nationalaverage })
+     }).collect();
+
+    Ok(axum::Json(json!(result[0])))
+}
+
+pub async fn top_state_health_metric<'a, E>(
+        executor: E,
+        level: Option<String> 
+    ) -> Result<Json<Value>, sqlx::Error>
+where
+    E: Executor<'a, Database = sqlx::Postgres>,
+{
+
+	let rows = sqlx::query(
+        "
+        SELECT
+            State,
+            Percentage
+        FROM
+            AgeAdjustedHealthPopulation a JOIN Habit h ON a.habit = h.id
+        WHERE
+            Level = $1 AND
+            Year = (SELECT MAX(Year) FROM AgeAdjustedHealthPopulation) AND
+            Percentage IS NOT NULL
+        ORDER BY
+            Percentage DESC
+        LIMIT 1;
+        "
+        )
+        .bind(level.unwrap_or("Obese".to_string())) 
+        .fetch_all(executor)
+        .await?; 
+
+     let result: Vec<Value> = rows.iter().map(|row| {
+        let state: String = row.try_get("state").unwrap_or_default();
+        let percentage: f64 = row.try_get("percentage").unwrap_or_default();
+        json!({ "state": state, "percentage": percentage })
+     }).collect();
+
+    Ok(axum::Json(json!(result[0])))
+}
+
+
+pub async fn disease_trend_over_time<'a, E>(
+        executor: E,
+        disease: Option<String> 
+    ) -> Result<Json<Value>, sqlx::Error>
+where
+    E: Executor<'a, Database = sqlx::Postgres>,
+{
+
+	let rows = sqlx::query(
+        "
+        SELECT
+            Year,
+            AVG(Percentage) as nationalAverage
+        FROM
+            ethnicityadjusteddiseasepopulation a JOIN ChronicDisease d ON a.disease = d.id
+        WHERE
+            SubType = $1
+        GROUP BY
+            Year
+        ORDER BY
+            Year ASC;
+        "
+        )
+        .bind(disease.unwrap_or("Asthma".to_string())) 
+        .fetch_all(executor)
+        .await?; 
+
+     let result: Vec<Value> = rows.iter().map(|row| {
+        let year: i32 = row.try_get("year").unwrap_or_default();
+        let nationalaverage: f64 = row.try_get("nationalaverage").unwrap_or_default();
+        json!({ "year": year, "nationalaverage": nationalaverage })
+     }).collect();
+
+    Ok(axum::Json(json!(result)))
+}
+
+pub async fn health_trend_over_time<'a, E>(
+        executor: E,
+        level: Option<String> 
+    ) -> Result<Json<Value>, sqlx::Error>
+where
+    E: Executor<'a, Database = sqlx::Postgres>,
+{
+
+	let rows = sqlx::query(
+        "
+        SELECT
+            Year,
+            AVG(Percentage) as nationalAverage
+        FROM
+            ethnicityadjustedhealthpopulation e JOIN Habit d ON e.habit = d.id
+        WHERE
+            Level = $1
+        GROUP BY
+            Year
+        ORDER BY
+            Year ASC;
+        "
+        )
+        .bind(level.unwrap_or("Obese".to_string())) 
+        .fetch_all(executor)
+        .await?; 
+
+     let result: Vec<Value> = rows.iter().map(|row| {
+        let year: i32 = row.try_get("year").unwrap_or_default();
+        let nationalaverage: f64 = row.try_get("nationalaverage").unwrap_or_default();
+        json!({ "year": year, "nationalaverage": nationalaverage })
+     }).collect();
+
+    Ok(axum::Json(json!(result)))
 }

@@ -1,15 +1,12 @@
 use serde::{Deserialize, Serialize};
 
-// the input to our `create_user` handler
-#[derive(Deserialize)]
-pub struct CreateUser {
-    pub username: String,
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Level {
+    pub level: Option<String>,
 }
 
-// the output to our `create_user` handler
-#[derive(Serialize)]
-pub struct User {
-    pub id: u64,
-    pub username: String,
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Disease {
+    pub dtype: Option<String>,
+    pub subtype: Option<String>
 }
-

@@ -1,8 +1,7 @@
 use axum::{
-    routing::{get, post},
+    routing::{get},
     Router,
 };
-
 use sqlx::{PgPool, postgres::PgPoolOptions};
 use std::result::Result;
 use std::error::Error;
@@ -11,7 +10,16 @@ pub mod types;
 pub mod routes;
 pub mod db;
 
-use routes::{root, create_user_handler, apple_handler, list_tables_handler, health_metric_handler};
+pub use routes::{
+    root, 
+    apple_handler, 
+    list_tables_handler, 
+    health_metric_handler, 
+    national_average_disease_handler, 
+    top_state_health_metric_handler, 
+    disease_trend_over_time_handler, 
+    health_trend_over_time_handler
+};
 
 async fn connect_db(database_url: &str) -> Result<PgPool, Box<dyn Error>> {
     let pool = PgPoolOptions::new()
@@ -47,13 +55,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let app = Router::new()
         // `GET /` goes to `root`
         .route("/", get(root))
-        // `POST /users` goes to `create_user_handler`
-        .route("/users", post(create_user_handler))
-        // `GET /apple/{id}` goes to `apple_handler`
-        .route("/apple/{id}", get(apple_handler))
+        // `SAMPLE ROUTE: GET /apple/{id}` goes to `apple_handler`
+        //.route("/apple/{id}", get(apple_handler))
         // `GET /tables` retrieves the names of all tables in the database
-        .route("/tables", get(list_tables_handler))
+        .route("/api/v1/tables", get(list_tables_handler))
         .route("/api/v1/map/health_metric", get(health_metric_handler))
+        .route("/api/v1/kpi/national_average/disease", get(national_average_disease_handler))
+        .route("/api/v1/kpi/top_state/health_metric", get(top_state_health_metric_handler))
+        .route("/api/v1/trends/national/disease", get(disease_trend_over_time_handler))
+        .route("/api/v1/trends/national/health_metric", get(health_trend_over_time_handler))
         .with_state(pool);
 
     // run our app with hyper, listening globally on port 3000
