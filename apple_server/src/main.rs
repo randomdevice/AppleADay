@@ -11,7 +11,7 @@ pub mod types;
 pub mod routes;
 pub mod db;
 
-use routes::{root, create_user_handler, apple_handler, list_tables_handler};
+use routes::{root, create_user_handler, apple_handler, list_tables_handler, health_metric_handler};
 
 async fn connect_db(database_url: &str) -> Result<PgPool, Box<dyn Error>> {
     let pool = PgPoolOptions::new()
@@ -31,7 +31,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Ok(url) => url,
         Err(_) => {
             eprintln!("DATABASE_URL environment variable is not set, defaulting to localhost.");
-            "postgres://postgres:postgres@localhost:5432/postgres".to_string()
+            "postgres://postgres:postgres@localhost:5432/appleaday".to_string()
         }
     };
 
@@ -53,10 +53,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .route("/apple/{id}", get(apple_handler))
         // `GET /tables` retrieves the names of all tables in the database
         .route("/tables", get(list_tables_handler))
+        .route("/api/v1/map/health_metric", get(health_metric_handler))
         .with_state(pool);
 
     // run our app with hyper, listening globally on port 3000
-    let listener = tokio::net::TcpListener::bind("localhost:3000").await.unwrap();
+    let ip = "localhost:8080";
+    println!("Serving application at http://{}", ip);
+    let listener = tokio::net::TcpListener::bind(ip).await.unwrap();
     axum::serve(listener, app).await.unwrap();
 
     Ok(())

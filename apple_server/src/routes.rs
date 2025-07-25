@@ -2,10 +2,14 @@ use axum::{
    http::StatusCode,
    extract::Path,
    extract::State,
+   extract::Query,
    response::Json,
 };
+use serde::Deserialize;
 use sqlx::PgPool;
 use serde_json::{json, Value};
+
+use crate::db::health_metric;
 
 use super::types::{CreateUser, User};
 use super::db::list_tables;
@@ -45,3 +49,18 @@ pub async fn list_tables_handler(
         .unwrap_or_else(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({}))))
 }
 
+#[derive(Deserialize, Debug)]
+pub struct Level {
+    pub level: Option<String>,
+}
+
+pub async fn health_metric_handler(
+    State(pool): State<PgPool>,
+    Query(params): Query<Level>
+) -> (StatusCode, Json<Value>) {
+    let level = Some(params.level.unwrap().trim_matches('"').to_string());
+    health_metric(&pool, level)
+        .await
+        .map(|json| (StatusCode::OK, json))
+        .unwrap_or_else(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({}))))
+}
