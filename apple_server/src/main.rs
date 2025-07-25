@@ -67,7 +67,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .with_state(pool);
 
     // run our app with hyper, listening globally on port 3000
-    let ip = "localhost:8080";
+    let ip = "0.0.0.0:8080";
     println!("Serving application at http://{}", ip);
     let listener = tokio::net::TcpListener::bind(ip).await.unwrap();
     axum::serve(listener, app).await.unwrap();
