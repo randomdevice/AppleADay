@@ -18,5 +18,5 @@ tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
 
 # OpenAPI Documentation
 utoipa = { version = "5.4", features = ["axum_extras"]}
-utoipa-swagger-ui = { version = "9.0", features = ["axum"]}
+utoipa-swagger-ui = { version = "9.0", features = ["axum", "debug-embed"]}
 utoipa-axum = { version = "0.2" }

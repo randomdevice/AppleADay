@@ -44,6 +44,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
     };
 
+    let port = match std::env::var("APPLE_PORT") {
+        Ok(port) => port,
+        Err(_) => {
+            eprintln!("APPLE_PORT environment variable is not set, defaulting to port 8080");
+            "8080".to_string()
+        }
+    };
+
     let pool = match connect_db(&database_url).await {
         Ok(pool) => pool,
         Err(e) => {
@@ -69,8 +77,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let router = router.merge(SwaggerUi::new("/swagger-ui").url("/api/openapi.json", api));
     let app = router.into_make_service();
 
-    // run our app with hyper, listening globally on port 3000
-    let ip = "0.0.0.0:8080";
+    // run our app with hyper, listening globally on port 8080 (http)
+    let ip = format!("0.0.0.0:{}", port);
     println!("Serving application at http://{}", ip);
     let listener = tokio::net::TcpListener::bind(ip).await.unwrap();
     axum::serve(listener, app).await.unwrap();
