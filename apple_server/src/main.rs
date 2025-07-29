@@ -1,10 +1,9 @@
-use axum::{
-    routing::{get},
-    Router,
-};
 use sqlx::{PgPool, postgres::PgPoolOptions};
 use std::result::Result;
 use std::error::Error;
+use utoipa_axum::router::OpenApiRouter;
+use utoipa_axum::routes;
+use utoipa_swagger_ui::SwaggerUi;
 
 pub mod types;
 pub mod routes;
@@ -14,6 +13,8 @@ pub use routes::{
     root, 
     apple_handler, 
     list_tables_handler, 
+    list_habits_handler, 
+    list_disease_handler,
     health_metric_handler, 
     national_average_disease_handler, 
     top_state_health_metric_handler, 
@@ -38,7 +39,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let database_url = match std::env::var("DATABASE_URL" ) {
         Ok(url) => url,
         Err(_) => {
-            eprintln!("DATABASE_URL environment variable is not set, defaulting to localhost.");
+            eprintln!("DATABASE_URL environment variable is not set, defaulting to localhost Postgres DB.");
             "postgres://postgres:postgres@localhost:5432/appleaday".to_string()
         }
     };
@@ -52,19 +53,21 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
 
     // build our application with a route
-    let app = Router::new()
-        // `GET /` goes to `root`
-        .route("/", get(root))
-        // `SAMPLE ROUTE: GET /apple/{id}` goes to `apple_handler`
-        //.route("/apple/{id}", get(apple_handler))
-        // `GET /tables` retrieves the names of all tables in the database
-        .route("/api/v1/tables", get(list_tables_handler))
-        .route("/api/v1/map/health_metric", get(health_metric_handler))
-        .route("/api/v1/kpi/national_average/disease", get(national_average_disease_handler))
-        .route("/api/v1/kpi/top_state/health_metric", get(top_state_health_metric_handler))
-        .route("/api/v1/trends/national/disease", get(disease_trend_over_time_handler))
-        .route("/api/v1/trends/national/health_metric", get(health_trend_over_time_handler))
-        .with_state(pool);
+    let (router, api) = OpenApiRouter::new()
+        .routes(routes!(crate::routes::root))
+        .routes(routes!(crate::routes::list_tables_handler))
+        .routes(routes!(crate::routes::list_habits_handler))
+        .routes(routes!(crate::routes::list_disease_handler))
+        .routes(routes!(crate::routes::health_metric_handler))
+        .routes(routes!(crate::routes::national_average_disease_handler))
+        .routes(routes!(crate::routes::top_state_health_metric_handler))
+        .routes(routes!(crate::routes::disease_trend_over_time_handler))
+        .routes(routes!(crate::routes::health_trend_over_time_handler))
+        .with_state(pool)
+        .split_for_parts();
+
+    let router = router.merge(SwaggerUi::new("/swagger-ui").url("/api/openapi.json", api));
+    let app = router.into_make_service();
 
     // run our app with hyper, listening globally on port 3000
     let ip = "0.0.0.0:8080";

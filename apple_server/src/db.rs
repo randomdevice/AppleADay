@@ -17,6 +17,50 @@ where
     Ok(Json(json!({ "rows": rows })))
 }
 
+pub async fn list_habits<'a, E>(executor: E) -> Result<Json<Value>, sqlx::Error>
+where
+    E: Executor<'a, Database = sqlx::Postgres>,
+{
+    let rows = sqlx::query(
+        "SELECT DISTINCT * FROM habit ORDER BY id"
+    )
+    .fetch_all(executor)
+    .await?;
+
+	let results: Vec<Value> = rows.iter().map(|row| {
+		let habit_type: String = row.try_get("type").unwrap_or_default();
+		let habit_level: String = row.try_get("level").unwrap_or_default();
+		json!({
+			"type": habit_type,
+			"level": habit_level 
+		})
+	}).collect();
+
+    Ok(Json(json!(results)))
+}
+
+pub async fn list_disease<'a, E>(executor: E) -> Result<Json<Value>, sqlx::Error>
+where
+    E: Executor<'a, Database = sqlx::Postgres>,
+{
+    let rows = sqlx::query(
+        "SELECT DISTINCT * FROM chronicdisease ORDER BY id"
+    )
+    .fetch_all(executor)
+    .await?;
+
+	let results: Vec<Value> = rows.iter().map(|row| {
+		let disease_type: String = row.try_get("type").unwrap_or_default();
+		let disease_subtype: String = row.try_get("subtype").unwrap_or_default();
+		json!({
+			"type": disease_type,
+			"level": disease_subtype 
+		})
+	}).collect();
+
+    Ok(Json(json!(results)))
+}
+
 pub async fn health_metric<'a, E>(
         executor: E,
         level: Option<String> 
