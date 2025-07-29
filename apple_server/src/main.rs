@@ -15,8 +15,15 @@ pub use routes::{
     list_tables_handler, 
     list_habits_handler, 
     list_disease_handler,
+    list_health_demographics_handler,
+    list_disease_demographics_handler,
+    list_health_age_handler,
+    list_disease_age_handler,
+    list_genders_handler,
     health_metric_handler, 
     national_average_disease_handler, 
+    national_average_health_metric_handler,
+    top_state_disease_handler,
     top_state_health_metric_handler, 
     disease_trend_over_time_handler, 
     health_trend_over_time_handler
@@ -66,9 +73,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .routes(routes!(crate::routes::list_tables_handler))
         .routes(routes!(crate::routes::list_habits_handler))
         .routes(routes!(crate::routes::list_disease_handler))
+        .routes(routes!(crate::routes::list_health_demographics_handler))
+        .routes(routes!(crate::routes::list_disease_demographics_handler))
+        .routes(routes!(crate::routes::list_health_age_handler))
+        .routes(routes!(crate::routes::list_disease_age_handler))
+        .routes(routes!(crate::routes::list_genders_handler))
         .routes(routes!(crate::routes::health_metric_handler))
         .routes(routes!(crate::routes::national_average_disease_handler))
+        .routes(routes!(crate::routes::national_average_health_metric_handler))
         .routes(routes!(crate::routes::top_state_health_metric_handler))
+        .routes(routes!(crate::routes::top_state_disease_handler))
         .routes(routes!(crate::routes::disease_trend_over_time_handler))
         .routes(routes!(crate::routes::health_trend_over_time_handler))
         .with_state(pool)
