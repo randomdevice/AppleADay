@@ -4,7 +4,7 @@
 
 This endpoint provides the data needed to render the main US map, showing the percentage of the population that is obese in each state for the most recent year.
 
-  * **Endpoint:** `GET /api/v1/map/health_metric?question=#`
+  * **Endpoint:** `GET /api/v1/map/health_metric`
 
   * **Description:** Fetches the percentage of the population for a given health metric across all states for the latest available year.
 
@@ -12,7 +12,7 @@ This endpoint provides the data needed to render the main US map, showing the pe
 
       * `question` (string, required): The specific health question to query. For the default map, this would be `'Obese'`.
 
-  * **Sample Response (for `?question=Obese`):**
+  * **Sample Response (for `?level=Obese`):**
 
     ```json
     {
@@ -51,7 +51,7 @@ These endpoints deliver the high-level national statistics for the dashboard's K
 
 #### **KPI 1: National Average Disease Rate**
 
-  * **Endpoint:** `GET /api/v1/kpi/national_average/disease?disease=#`
+  * **Endpoint:** `GET /api/v1/kpi/national_average/disease`
 
   * **Description:** Calculates the national average percentage for a specific chronic disease for the latest year.
 
@@ -59,7 +59,7 @@ These endpoints deliver the high-level national statistics for the dashboard's K
 
       * `disease` (string, required): The `SubType` of the disease (e.g., `'Diabetes'`).
 
-  * **Sample Response (for `?disease=Diabetes`):**
+  * **Sample Response (for `?subtype="Diabetes"`):**
 
     ```json
     {
@@ -92,7 +92,7 @@ These endpoints deliver the high-level national statistics for the dashboard's K
 
       * `question` (string, required): The health metric to evaluate (e.g., `'Cardio and Strength'`).
 
-  * **Sample Response (for `?question=Cardio and Strength`):**
+  * **Sample Response (for `?level="Cardio and Strength"`):**
 
     ```json
     {
@@ -137,7 +137,7 @@ These endpoints provide data to draw the line charts showing national trends ove
 
       * `disease` (string, required): The `SubType` of the disease (e.g., `'Coronary Heart Disease'`).
 
-  * **Sample Response (for `?disease=Coronary Heart Disease`):**
+  * **Sample Response (for `?subtype="Coronary Heart Disease"`):**
 
     ```json
     {
@@ -177,7 +177,7 @@ These endpoints provide data to draw the line charts showing national trends ove
 
       * `question` (string, required): The health metric to track (e.g., `'No Activity'`).
 
-  * **Sample Response (for `?question=No Activity`):**
+  * **Sample Response (for `?level="No Activity"`):**
 
     ```json
     {
