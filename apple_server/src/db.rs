@@ -273,7 +273,7 @@ where
 
 pub async fn top_state_disease<'a, E>(
         executor: E,
-        level: Option<String> 
+        subtype: Option<String> 
     ) -> Result<Json<Value>, sqlx::Error>
 where
     E: Executor<'a, Database = sqlx::Postgres>,
@@ -296,14 +296,14 @@ where
             TotalPercentage DESC
         LIMIT 1;"
         )
-        .bind(level.unwrap_or("Asthma".to_string())) 
+        .bind(subtype.unwrap_or("Asthma".to_string())) 
         .fetch_all(executor)
         .await?; 
 
      let result: Vec<Value> = rows.iter().map(|row| {
         let state: String = row.try_get("state").unwrap_or_default();
         let year: i32 = row.try_get("year").unwrap_or_default();
-        let percentage: f64 = row.try_get("percentage").unwrap_or_default();
+        let percentage: f64 = row.try_get("totalpercentage").unwrap_or_default();
         json!({ "state": state, "year": year, "percentage": percentage })
      }).collect();
 

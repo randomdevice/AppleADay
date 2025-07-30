@@ -236,7 +236,7 @@ pub async fn top_state_health_metric_handler(
     get,
     path = "/api/v1/kpi/top_state/disease",
     params(
-        ("level" = Option<String>, Query, description = "The health metric level to query for.", example = "Obese")
+        ("subtype" = Option<String>, Query, description = "The health metric level to query for.", example = "Asthma")
     ),
     description = "Returns a KPI representing the top state of a disease subtype."
 )]
