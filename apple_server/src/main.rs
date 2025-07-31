@@ -4,6 +4,7 @@ use std::error::Error;
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_axum::routes;
 use utoipa_swagger_ui::SwaggerUi;
+use tower_http::cors::{CorsLayer, Any};
 
 pub mod types;
 pub mod routes;
@@ -67,6 +68,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
     };
 
+    let cors_permissive = CorsLayer::new()
+        .allow_origin(Any) // Allow any origin (wildcard *)
+        .allow_methods(Any) // Allow any method
+        .allow_headers(Any); // Allow any header
+
     // build our application with a route
     let (router, api) = OpenApiRouter::new()
         .routes(routes!(crate::routes::root))
@@ -88,7 +94,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .with_state(pool)
         .split_for_parts();
 
-    let router = router.merge(SwaggerUi::new("/swagger-ui").url("/api/openapi.json", api));
+    let router = router.merge(SwaggerUi::new("/swagger-ui").url("/api/openapi.json", api)).layer(cors_permissive);
     let app = router.into_make_service();
 
     // run our app with hyper, listening globally on port 8080 (http)

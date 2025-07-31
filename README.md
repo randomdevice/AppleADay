@@ -7,6 +7,23 @@ The following project is organized into several folders:
 - **apple_server**: The server-side application that handles data storage and processing.
 - **data_preprocessing**: Will store .ipynb notebooks and Python scripts for preparing and cleaning database data before it is used in the application.
 
+## General Startup
+
+This application requires:
+- a Postgres server, with the data loaded from the CSVs in data_preprocessing/preprocessed_data
+- Rust and Cargo installed
+- NodeJS installed
+
+To run the server:
+- Set DATABASE_URL to the address of the postgres server (like postgres://postgres:postgres:5432/appleaday)
+- Set the environment variable APPLE_PORT to launch the server at a specific port, defaults to 8080
+- Run `cargo run` which will deploy the API server to http://localhost:8080/swagger-ui (or any alternative port you provide)
+
+To run the client at apple_client:
+- Point src/config.json to the location of the API server, should use the defaults above (localhost:8080)
+- Install npm dependencies (`npm install`)
+- Run the client web app (`npm run dev`)
+
 ## Development Dependencies
 
 This repository requires the following dependencies to be installed/setup in order to develop:

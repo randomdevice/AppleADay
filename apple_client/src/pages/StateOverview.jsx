@@ -4,6 +4,7 @@ import axios from 'axios';
 import { scaleLinear } from 'd3-scale';
 import KPICard from '../components/KPICard';
 import SelectionDisease from '../components/SelectionDisease';
+import config from '../config.json';
 
 // US topoJSON
 const geoUrl = 'https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json';
@@ -11,26 +12,43 @@ const geoUrl = 'https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json';
 const StateOverview = () => {
   const [obesityData, setObesityData] = useState([]);
   const [hoveredState, setHoveredState] = useState('');
-  const [nationalKpis, setNationalKpis] = useState({});
+  const [nationalMortalityDiabetes, setNationalMortalityDiabetes] = useState({});
+  const [topActiveState, setTopActiveState] = useState({});
+  const [nationalInactivityRate, setNationalInactivityRate] = useState({});
   const [trendData, setTrendData] = useState({});
 
   useEffect(() => {
     // Fetch default map metric: obesity
-    axios.get('http://localhost:5432/api/v1/map/health_metric?question=Obese')
-      .then(res => setObesityData(res.data.data))
+    axios.get(`http://${config.server_host}:${config.server_port}/api/v1/map/health_metric?level=Obese`)
+      .then(res => { 
+          setObesityData(res.data)
+      })
       .catch(console.error);
 
     // Fetch national KPIs
-    axios.get('http://localhost:3000/national_average/Diabetes')
+    axios.get(`http://${config.server_host}:${config.server_port}/api/v1/kpi/national_average/disease?subtype=Diabetes`)
       .then(res => {
-        console.log(res); // Debug
-        setNationalKpis(res)
+          setNationalMortalityDiabetes(res.data.nationalaverage.toFixed(3))
+      })
+      .catch(console.error);
+
+    axios.get(`http://${config.server_host}:${config.server_port}/api/v1/kpi/top_state/health_metric?level=Cardio%20and%20Strength`)
+      .then(res => {
+          setTopActiveState(res.data.state)
+      })
+      .catch(console.error);
+
+    axios.get(`http://${config.server_host}:${config.server_port}/api/v1/kpi/national_average/health_metric?level=No%20Activity`)
+      .then(res => {
+          setNationalInactivityRate(res.data.nationalaverage.toFixed(3))
       })
       .catch(console.error);
 
     // Fetch trend data
-    axios.get('http://localhost:5432/api/v1/map/national_trends')
-      .then(res => setTrendData(res.data))
+    axios.get(`http://${config.server_host}:${config.server_port}/api/v1/trends/national/health_metric?level=Obese`)
+      .then(res => { 
+          setTrendData(res.data)
+      })
       .catch(console.error);
   }, []);
 
@@ -38,7 +56,8 @@ const StateOverview = () => {
     .domain([20, 40])
     .range(['#e0f3f3', '#ca0020']);
 
-  const getStateObesity = (name) => obesityData.find(s => s.state === name);
+  //console.log(obesityData);
+  const getStateObesity = (state) => Math.round(obesityData[state] * 100)/100;
 
   return (
     <div style={{ padding: '1rem 2rem' }}>
@@ -55,9 +74,9 @@ const StateOverview = () => {
           margin: '2rem 0',
           gap: '1rem',
         }}>
-          <KPICard title="National Diabetes Rate" value={`${nationalKpis.average ?? 'N/A'}%`} /> 
-          <KPICard title="Most Active State" value={nationalKpis.most_active_state ?? 'N/A'} />
-          <KPICard title="Top Fruit & Veg State" value={nationalKpis.top_fv_state ?? 'N/A'} />
+          <KPICard title="National Diabetes Mortality Rate" value={`${nationalMortalityDiabetes ?? 'N/A'}%`} /> 
+          <KPICard title="Most Active State" value={`${topActiveState ?? 'N/A'}`} />
+          <KPICard title="National Inactivity Average" value={`${nationalInactivityRate ?? 'N/A'}%`} />
         </div>
 
       {/* Map */}
@@ -69,14 +88,14 @@ const StateOverview = () => {
                 geographies.map(geo => {
                   const state = geo.properties.name;
                   const datum = getStateObesity(state);
-                  const fill = datum ? colorScale(datum.percentage) : '#EEE';
+                  const fill = datum ? colorScale(datum) : '#EEE';
 
                   return (
                     <Geography
                       key={geo.rsmKey}
                       geography={geo}
                       onMouseEnter={() =>
-                        setHoveredState(`${state}: ${datum?.percentage ?? 'N/A'}%`)
+                        setHoveredState(`${state}: ${datum ?? 'N/A'}%`)
                       }
                       onMouseLeave={() => setHoveredState('')}
                       style={{

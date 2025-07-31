@@ -13,9 +13,9 @@ export default function App() {
       <Navbar />
       <Routes>
         <Route path="/" element={<StateOverview />} />
-        <Route path="/explore" element={<DiseaseExplorer />} />
-        <Route path="/compare" element={<StateComparison />} />
-        <Route path="/deepdive" element={<DeepDiveState />} />
+        //<Route path="/explore" element={<DiseaseExplorer />} />
+        //<Route path="/compare" element={<StateComparison />} />
+        //<Route path="/deepdive" element={<DeepDiveState />} />
       </Routes>
       <Footer />
     </>
