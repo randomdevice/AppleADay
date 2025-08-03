@@ -1,5 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { ComposableMap, Geographies, Geography } from 'react-simple-maps';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
+} from 'recharts';
 import axios from 'axios';
 import { scaleLinear } from 'd3-scale';
 import KPICard from '../components/KPICard';
@@ -15,7 +25,8 @@ const StateOverview = () => {
   const [nationalMortalityDiabetes, setNationalMortalityDiabetes] = useState({});
   const [topActiveState, setTopActiveState] = useState({});
   const [nationalInactivityRate, setNationalInactivityRate] = useState({});
-  const [trendData, setTrendData] = useState({});
+  const [trendDataHeartDisease, setTrendDataHeartDisease] = useState([]);
+  const [trendDataPhysicalActivity, setTrendDataPhysicalActivity] = useState([]);
 
   useEffect(() => {
     // Fetch default map metric: obesity
@@ -45,9 +56,29 @@ const StateOverview = () => {
       .catch(console.error);
 
     // Fetch trend data
-    axios.get(`http://${config.server_host}:${config.server_port}/api/v1/trends/national/health_metric?level=Obese`)
+    axios.get(`http://${config.server_host}:${config.server_port}/api/v1/trends/national/disease?subtype=Coronary%20Heart%20Disease`)
       .then(res => { 
-          setTrendData(res.data)
+          const preprocess = res.data.map(item => {
+            const rounded = parseFloat(item.nationalaverage.toFixed(3));
+            return {
+                ...item,
+                nationalaverage: rounded,
+            }
+          });
+          setTrendDataHeartDisease(preprocess)
+      })
+      .catch(console.error);
+
+    axios.get(`http://${config.server_host}:${config.server_port}/api/v1/trends/national/health_metric?level=No%20Activity`)
+      .then(res => { 
+          const preprocess = res.data.map(item => {
+            const rounded = parseFloat(item.nationalaverage.toFixed(3));
+            return {
+                ...item,
+                nationalaverage: rounded,
+            }
+          });
+          setTrendDataPhysicalActivity(preprocess)
       })
       .catch(console.error);
   }, []);
@@ -80,7 +111,7 @@ const StateOverview = () => {
         </div>
 
       {/* Map */}
-      <div style={{ display: 'flex', gap: '2rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'flex-start', gap: '2rem' }}>
         <div style={{ width: '50%' }}>
           <ComposableMap projection="geoAlbersUsa">
             <Geographies geography={geoUrl}>
@@ -116,34 +147,69 @@ const StateOverview = () => {
       {/* Trends */}
       <div style={{ marginTop: '3rem' }}>
         <h2>National Trends</h2>
-        <TrendChart
-          title="Heart Disease Mortality"
-          data={trendData.heart_disease}
-        />
-        <TrendChart
-          title="Physical Inactivity"
-          data={trendData.inactivity}
-        />
+        <div style={{
+             display: 'flex',
+             flexWrap: 'wrap', // Allows items to wrap if screen is too small
+             justifyContent: 'space-around', // Distributes space between/around items
+             gap: '1 px', // Space between the chart containers
+             alignItems: 'flex-start' // Aligns items to the top if heights differ
+        }}>
+            <div style={{ flex: 1, minWidth: '450px' }}>
+                 <TrendChart
+                   chartData={trendDataHeartDisease}
+                   title="Heart Disease Mortality"
+                 />
+            </div>
+            <div style={{ flex: 1, minWidth: '450px' }}>
+                <TrendChart
+                  chartData={trendDataPhysicalActivity}
+                  title="Physical Inactivity"
+                />
+            </div>
+        </div>
       </div>
     </div>
   );
 };
 
-// Simple Line Chart Component (replace with chart.js / Recharts later)
-const TrendChart = ({ title, data }) => (
-  <div style={{ marginBottom: '2rem' }}>
-    <h4>{title}</h4>
-    {data && data.length ? (
-      <ul>
-        {data.map((point, idx) => (
-          <li key={idx}>{point.year}: {point.value}%</li>
-        ))}
-      </ul>
-    ) : (
-      <p>No data available</p>
-    )}
-  </div>
-);
+// Add 'title' to the props destructuring
+const TrendChart = ({ chartData, title }) => {
+  if (!chartData || chartData.length === 0) {
+    return <p>No data to display for the chart.</p>;
+  }
+
+  return (
+    <div style={{ textAlign: 'center' }}> {/* Added div for centering title */}
+      {title && <h2>{title}</h2>} {/* Display the title if provided */}
+      <ResponsiveContainer width="100%" height={400}>
+        <LineChart
+          data={chartData}
+          margin={{
+            top: 5,
+            right: 30,
+            left: 20,
+            bottom: 10,
+          }}
+        >
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="year" 
+                 label={{ value: "Year", position: 'insideBottom', offset: -10 }}/>
+          <YAxis label={{ value: "National Average", angle: -90, position: 'insideLeft', offset: -5 }}
+                 domain={['dataMin', 'auto']}/>
+          <Tooltip />
+          <Line
+            type="monotone"
+            dataKey="nationalaverage"
+            stroke="#8884d8"
+            activeDot={{ r: 8 }}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+};
+
+
 
 export default StateOverview;
 
