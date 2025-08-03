@@ -14,13 +14,16 @@ import axios from 'axios';
 import { scaleLinear } from 'd3-scale';
 import KPICard from '../components/KPICard';
 import SelectionDisease from '../components/SelectionDisease';
+import HabitSelector from '../components/SelectionHabit';
 import config from '../config.json';
 
 // US topoJSON
 const geoUrl = 'https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json';
 
 const StateOverview = () => {
-  const [obesityData, setObesityData] = useState([]);
+  const [habitData, setHabitData] = useState([]);
+  const [mapInput, setMapInput] = useState('Obese');
+  const [mapData, setMapData] = useState([]);
   const [hoveredState, setHoveredState] = useState('');
   const [nationalMortalityDiabetes, setNationalMortalityDiabetes] = useState({});
   const [topActiveState, setTopActiveState] = useState({});
@@ -29,10 +32,17 @@ const StateOverview = () => {
   const [trendDataPhysicalActivity, setTrendDataPhysicalActivity] = useState([]);
 
   useEffect(() => {
-    // Fetch default map metric: obesity
-    axios.get(`http://${config.server_host}:${config.server_port}/api/v1/map/health_metric?level=Obese`)
+    // Get map data
+    axios.get(`http://${config.server_host}:${config.server_port}/api/v1/habits`)
       .then(res => { 
-          setObesityData(res.data)
+          setHabitData(res.data)
+      })
+      .catch(console.error);
+
+    // Fetch default map metric: obesity
+    axios.get(`http://${config.server_host}:${config.server_port}/api/v1/map/health_metric?level=${mapInput}`)
+      .then(res => { 
+          setMapData(res.data)
       })
       .catch(console.error);
 
@@ -83,12 +93,20 @@ const StateOverview = () => {
       .catch(console.error);
   }, []);
 
+  useEffect(() => {
+    // Fetch default map metric: obesity
+    axios.get(`http://${config.server_host}:${config.server_port}/api/v1/map/health_metric?level=${mapInput}`)
+      .then(res => { 
+          setMapData(res.data)
+      })
+      .catch(console.error);
+  }, [mapInput]);
+
   const colorScale = scaleLinear()
     .domain([20, 40])
     .range(['#e0f3f3', '#ca0020']);
 
-  //console.log(obesityData);
-  const getStateObesity = (state) => Math.round(obesityData[state] * 100)/100;
+  const getStateObesity = (state) => Math.round(mapData[state] * 100)/100;
 
   return (
     <div style={{ padding: '1rem 2rem' }}>
@@ -97,7 +115,7 @@ const StateOverview = () => {
         A nationwide glance at key health metrics in the United States
       </p>
 
-      <SelectionDisease />
+      <HabitSelector habitData={habitData} onViewResults={setMapInput}/>
       {/* KPI Cards */}
       <div style={{
           display: 'flex',
@@ -111,8 +129,9 @@ const StateOverview = () => {
         </div>
 
       {/* Map */}
-      <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'flex-start', gap: '2rem' }}>
-        <div style={{ width: '50%' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-around' }}>
+        <div style={{ width: '55%', alignItems: 'center' }}>
+          <h2> Percentage {mapInput} In {hoveredState}</h2>
           <ComposableMap projection="geoAlbersUsa">
             <Geographies geography={geoUrl}>
               {({ geographies }) =>
@@ -140,7 +159,6 @@ const StateOverview = () => {
               }
             </Geographies>
           </ComposableMap>
-          {<p style={{ marginTop: '0.5rem' }}>Hovering: {hoveredState}</p>}
         </div>
       </div>
 
