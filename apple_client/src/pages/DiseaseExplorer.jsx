@@ -72,7 +72,7 @@ const DiseaseExplorer = () => {
 
   return (
     
-  <div>
+  <div style={{ padding: '1rem 2rem' }}>
     <div style={{ textAlign: 'center' }}>
       <h1 style={{ textAlign: 'center' }}>Disease Explorer</h1>
       <p style={{ textAlign: 'center', color: '#666' }}>
@@ -114,8 +114,8 @@ const DiseaseChart = ({ chartData, title, states }) => {
   }
 
   return (
-    <div style={{ textAlign: 'center' }}> {/* Added div for centering title */}
-      {title && <h2>{title}</h2>} {/* Display the title if provided */}
+    <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-around', alignItems: 'center' }}> {/* Added div for centering title */}
+      <h2>{title}</h2> {/* Display the title if provided */}
       <ResponsiveContainer width="100%" height={400}>
         <LineChart
           data={chartData}

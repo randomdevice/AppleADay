@@ -169,7 +169,7 @@ where
     Ok(axum::Json(Value::Object(result_map)))
 }
 
-pub async fn health_metric<'a, E>(
+pub async fn health_metric_map<'a, E>(
         executor: E,
         level: Option<String> 
     ) -> Result<Json<Value>, sqlx::Error>

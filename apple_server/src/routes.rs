@@ -8,21 +8,21 @@ use axum::{
 use sqlx::PgPool;
 use serde_json::{json, Value};
 
-use crate::db::state_average_disease;
-
-// SQLx functions
-use super::db::health_metric;
-use super::db::disease_map;
+// SQLx list functions
 use super::db::list_tables;
 use super::db::list_habits;
 use super::db::list_disease;
-
-use super::db::list_health_demographics;
-use super::db::list_disease_demographics;
-use super::db::list_health_age;
 use super::db::list_disease_age;
+use super::db::list_disease_demographics;
+use super::db::list_health_demographics;
+use super::db::list_health_age;
 use super::db::list_genders;
 
+// SQLx map information
+use super::db::health_metric_map;
+use super::db::disease_map;
+
+// SQLx KPIs
 use super::db::national_average_disease;
 use super::db::national_average_health_metric;
 use super::db::top_state_disease;
@@ -32,8 +32,9 @@ use super::db::health_trend_over_time;
 use super::db::most_negative_habit_age;
 use super::db::most_negative_habit_ethnicity;
 use super::db::most_negative_habit_gender;
-use super::db::disease_by_age_on_top5;
 
+use super::db::state_average_disease;
+use super::db::disease_by_age_on_top5;
 
 // Input types
 use super::types::{Level, Disease, StateDisease};
@@ -122,20 +123,6 @@ pub async fn list_disease_demographics_handler(
 
 #[utoipa::path(
     get,
-    path = "/api/v1/health_metric/demographics",
-    description = "Get list of demographics associated with health_metric tables."
-)]
-pub async fn list_health_demographics_handler(
-    State(pool): State<PgPool>,
-) -> (StatusCode, Json<Value>) {
-    list_health_demographics(&pool)
-        .await
-        .map(|json| (StatusCode::OK, json))
-        .unwrap_or_else(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({}))))
-}
-
-#[utoipa::path(
-    get,
     path = "/api/v1/health_metric/age",
     description = "Get list of age ranges associated with health_metric tables."
 )]
@@ -143,6 +130,20 @@ pub async fn list_health_age_handler(
     State(pool): State<PgPool>,
 ) -> (StatusCode, Json<Value>) {
     list_health_age(&pool)
+        .await
+        .map(|json| (StatusCode::OK, json))
+        .unwrap_or_else(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({}))))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/health_metric/demographics",
+    description = "Get list of demographics associated with health_metric tables."
+)]
+pub async fn list_health_demographics_handler(
+    State(pool): State<PgPool>,
+) -> (StatusCode, Json<Value>) {
+    list_health_demographics(&pool)
         .await
         .map(|json| (StatusCode::OK, json))
         .unwrap_or_else(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({}))))
@@ -170,12 +171,12 @@ pub async fn list_genders_handler(
     ),
     description = "Queries statewide data for the current year of the average level of a given health metric."
 )]
-pub async fn health_metric_handler(
+pub async fn health_metric_map_handler(
     State(pool): State<PgPool>,
     Query(params): Query<Level>
 ) -> (StatusCode, Json<Value>) {
     let level = Some(params.level.unwrap_or("Obese".to_string()).trim_matches('"').to_string());
-    health_metric(&pool, level)
+    health_metric_map(&pool, level)
         .await
         .map(|json| (StatusCode::OK, json))
         .unwrap_or_else(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({}))))
@@ -402,7 +403,6 @@ pub async fn disease_by_age_on_top5_handler(
     ),
     description = "The state-wise average trends of the specific disease."
 )]
-
 pub async fn state_average_disease_handler(
     State(pool): State<PgPool>,
     Query(params): Query<StateDisease>

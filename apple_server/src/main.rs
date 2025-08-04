@@ -21,14 +21,19 @@ pub use routes::{
     list_health_age_handler,
     list_disease_age_handler,
     list_genders_handler,
-    health_metric_handler, 
+    health_metric_map_handler,
     disease_map_handler,
     national_average_disease_handler, 
     national_average_health_metric_handler,
     top_state_disease_handler,
     top_state_health_metric_handler, 
+    most_negative_habit_age_handler,
+    most_negative_habit_ethnicity_handler,
+    most_negative_habit_gender_handler,
     disease_trend_over_time_handler, 
-    health_trend_over_time_handler
+    health_trend_over_time_handler,
+    disease_by_age_on_top5_handler,
+    state_average_disease_handler,
 };
 
 async fn connect_db(database_url: &str) -> Result<PgPool, Box<dyn Error>> {
@@ -85,14 +90,19 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .routes(routes!(crate::routes::list_health_age_handler))
         .routes(routes!(crate::routes::list_disease_age_handler))
         .routes(routes!(crate::routes::list_genders_handler))
-        .routes(routes!(crate::routes::health_metric_handler))
+        .routes(routes!(crate::routes::health_metric_map_handler))
         .routes(routes!(crate::routes::disease_map_handler))
         .routes(routes!(crate::routes::national_average_disease_handler))
         .routes(routes!(crate::routes::national_average_health_metric_handler))
         .routes(routes!(crate::routes::top_state_health_metric_handler))
         .routes(routes!(crate::routes::top_state_disease_handler))
+        .routes(routes!(crate::routes::most_negative_habit_age_handler))
+        .routes(routes!(crate::routes::most_negative_habit_gender_handler))
+        .routes(routes!(crate::routes::most_negative_habit_ethnicity_handler))
         .routes(routes!(crate::routes::disease_trend_over_time_handler))
         .routes(routes!(crate::routes::health_trend_over_time_handler))
+        .routes(routes!(crate::routes::disease_by_age_on_top5_handler))
+        .routes(routes!(crate::routes::state_average_disease_handler))
         .with_state(pool)
         .split_for_parts();
 

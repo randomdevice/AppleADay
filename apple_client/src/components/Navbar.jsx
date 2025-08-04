@@ -28,20 +28,6 @@ const Navbar = () => {
         >
           Disease Explorer
         </NavLink>
-        <NavLink
-          to="/compare"
-          style={styles.link}
-          className={({ isActive }) => (isActive ? 'active-link' : '')}
-        >
-          Correlation Center
-        </NavLink>
-        <NavLink
-          to="/deepdive"
-          style={styles.link}
-          className={({ isActive }) => (isActive ? 'active-link' : '')}
-        >
-          State Deep Dive
-        </NavLink>
       </div>
     </nav>
   );
