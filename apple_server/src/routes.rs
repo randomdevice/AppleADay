@@ -8,6 +8,8 @@ use axum::{
 use sqlx::PgPool;
 use serde_json::{json, Value};
 
+use crate::db::state_average_disease;
+
 // SQLx functions
 use super::db::health_metric;
 use super::db::disease_map;
@@ -28,14 +30,9 @@ use super::db::top_state_health_metric;
 use super::db::disease_trend_over_time;
 use super::db::health_trend_over_time;
 
-use super::db::most_negative_habit_age;
-use super::db::most_negative_habit_gender;
-use super::db::most_negative_habit_ethnicity;
-
-
 
 // Input types
-use super::types::{Level, Disease};
+use super::types::{Level, Disease, StateDisease};
 
 // basic handler that responds with a static string
 #[utoipa::path(
@@ -261,7 +258,8 @@ pub async fn top_state_health_metric_handler(
     get,
     path = "/api/v1/kpi/top_state/disease",
     params(
-        ("subtype" = Option<String>, Query, description = "The health metric level to query for.", example = "Asthma")
+        ("subtype" = Option<String>, Query, description = "The health metric level to query for.", example = "Asthma"),
+        ("top" = Option<i32>, Query, description = "The top N states to return.", example = "1")
     ),
     description = "Returns a KPI representing the top state of a disease subtype."
 )]
@@ -270,7 +268,8 @@ pub async fn top_state_disease_handler(
     Query(params): Query<Disease>
 ) -> (StatusCode, Json<Value>) {
     let disease = Some(params.subtype.unwrap_or("Asthma".to_string()).trim_matches('"').to_string());
-    top_state_disease(&pool, disease)
+    let top = Some(params.top.unwrap_or(1));
+    top_state_disease(&pool, disease, top)
         .await
         .map(|json| (StatusCode::OK, json))
         .unwrap_or_else(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({}))))
@@ -366,6 +365,47 @@ pub async fn most_negative_habit_ethnicity_handler(
 ) -> (StatusCode, Json<Value>) {
     let level = Some(params.level.unwrap_or("Obese".to_string()).trim_matches('"').to_string());
     most_negative_habit_ethnicity(&pool, level)
+        .await
+        .map(|json| (StatusCode::OK, json))
+        .unwrap_or_else(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({}))))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/trends/states_top5/disease",
+    params(
+        ("subtype" = Option<String>, Query, description = "The subtype of diseases to query for.", example = "Diabetes")
+    ),
+    description = "Trend of Diabetes Across Age Groups in Top 5 States by Average Prevalence"
+)]
+pub async fn disease_by_age_on_top5_handler(
+    State(pool): State<PgPool>,
+    Query(params): Query<Disease>
+) -> (StatusCode, Json<Value>) {
+    let disease = Some(params.subtype.unwrap_or("Asthma".to_string()).trim_matches('"').to_string());
+    disease_by_age_on_top5(&pool, disease)
+        .await
+        .map(|json| (StatusCode::OK, json))
+        .unwrap_or_else(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({}))))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/trends/states/disease",
+    params(
+        ("subtype" = Option<String>, Query, description = "The subtype of diseases to query for.", example = "Diabetes"),
+        ("state" = Option<String>, Query, description = "The state to query for.", example = "California")
+    ),
+    description = "The state-wise average trends of the specific disease."
+)]
+
+pub async fn state_average_disease_handler(
+    State(pool): State<PgPool>,
+    Query(params): Query<StateDisease>
+) -> (StatusCode, Json<Value>) {
+    let subtype = Some(params.subtype.unwrap_or("Asthma".to_string()).trim_matches('"').to_string());
+    let state = Some(params.state.unwrap_or("California".to_string()).trim_matches('"').to_string());
+    state_average_disease(&pool, subtype, state)
         .await
         .map(|json| (StatusCode::OK, json))
         .unwrap_or_else(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({}))))

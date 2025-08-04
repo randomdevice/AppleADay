@@ -281,6 +281,38 @@ where
     Ok(axum::Json(json!(result[0])))
 }
 
+pub async fn state_average_disease<'a, E>(
+        executor: E,
+        subtype: Option<String>,
+        state: Option<String>
+    ) -> Result<Json<Value>, sqlx::Error>
+where
+    E: Executor<'a, Database = sqlx::Postgres>,
+{
+
+	let rows = sqlx::query(
+        "
+        SELECT year, state, AVG(percentage) as stateAverage
+        FROM ethnicityadjusteddiseasepopulation e JOIN chronicdisease d ON e.disease = d.id
+        WHERE subtype = $1 and state = $2
+        GROUP BY year, state
+        "
+        )
+        .bind(subtype.unwrap_or("Diabetes".to_string()))
+        .bind(state.unwrap_or("All States".to_string()))
+        .fetch_all(executor)
+        .await?; 
+
+    let result: Vec<Value> = rows.iter().map(|row| {
+        let state: String = row.try_get("state").unwrap_or_default();
+        let year: i32 = row.try_get("year").unwrap_or_default();
+        let stateaverage: f64 = row.try_get("stateaverage").unwrap_or_default();
+        json!({ "state": state, "year": year, "stateaverage": stateaverage })
+    }).collect();
+
+    Ok(axum::Json(json!(result)))
+}
+
 pub async fn top_state_health_metric<'a, E>(
         executor: E,
         level: Option<String> 
@@ -322,12 +354,12 @@ where
 
 pub async fn top_state_disease<'a, E>(
         executor: E,
-        subtype: Option<String> 
+        subtype: Option<String>,
+        top: Option<i32>
     ) -> Result<Json<Value>, sqlx::Error>
 where
     E: Executor<'a, Database = sqlx::Postgres>,
 {
-
 	let rows = sqlx::query(
         "
         SELECT
@@ -343,9 +375,11 @@ where
         GROUP BY State, Year
         ORDER BY
             TotalPercentage DESC
-        LIMIT 1;"
+        LIMIT $2;
+        "
         )
-        .bind(subtype.unwrap_or("Asthma".to_string())) 
+        .bind(subtype.unwrap_or("Asthma".to_string()))
+        .bind(top.unwrap_or(1))
         .fetch_all(executor)
         .await?; 
 
@@ -356,7 +390,7 @@ where
         json!({ "state": state, "year": year, "percentage": percentage })
      }).collect();
 
-    Ok(axum::Json(json!(result[0])))
+    Ok(axum::Json(json!(result)))
 }
 
 
@@ -393,7 +427,11 @@ where
         json!({ "year": year, "nationalaverage": nationalaverage })
      }).collect();
 
-    Ok(axum::Json(json!(result)))
+    if result.len() == 1 {
+       Ok(axum::Json(json!(result[0])))
+    } else {
+       Ok(axum::Json(json!(result)))
+    }
 }
 
 pub async fn health_trend_over_time<'a, E>(
@@ -594,4 +632,50 @@ where
 
     if result.len() > 0 { Ok(axum::Json(json!(result[0]))) }
         else { Ok(axum::Json(json!({}))) }
+}
+
+pub async fn disease_by_age_on_top5<'a, E>(
+        executor: E,
+        subtype: Option<String>
+    ) -> Result<Json<Value>, sqlx::Error>
+where
+    E: Executor<'a, Database = sqlx::Postgres>,
+{
+
+	let rows = sqlx::query(
+        "
+        WITH DiabetesData AS (
+            SELECT
+                a.state, a.age, a.year, a.percentage
+            FROM Ageadjusteddiseasepopulation a
+            JOIN Chronicdisease c ON a.disease = c.id
+            WHERE c.subtype = $1
+        ),
+        TopStates AS (
+            SELECT state
+            FROM DiabetesData
+            GROUP BY state
+            ORDER BY AVG(percentage) DESC
+            LIMIT 5
+        )
+        SELECT
+            d.state, d.age, d.year, d.percentage
+        FROM DiabetesData d
+        JOIN TopStates t ON d.state = t.state
+        ORDER BY d.state, d.year, d.age;
+        "
+        )
+        .bind(subtype.unwrap_or("Diabetes".to_string()))
+        .fetch_all(executor)
+        .await?; 
+
+     let result: Vec<Value> = rows.iter().map(|row| {
+        let year: i32 = row.try_get("year").unwrap_or_default();
+        let percentage: f64 = row.try_get("percentage").unwrap_or_default();
+        let state: String = row.try_get("state").unwrap_or_default();
+        let age: String = row.try_get("age").unwrap_or_default();
+        json!({ "year": year, "percentage": percentage, "state": state, "age": age })
+     }).collect();
+
+    Ok(axum::Json(json!(result)))
 }

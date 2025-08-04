@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^7.0.0",
+    "@fortawesome/free-brands-svg-icons": "^7.0.0",
+    "@fortawesome/free-solid-svg-icons": "^7.0.0",
+    "@fortawesome/react-fontawesome": "^0.2.3",
+    "react-is": "^19.1.1",
+    "recharts": "^3.1.0",
+    "swagger-ui": "^5.27.1"
+  }
+}

@@ -28,10 +28,7 @@ pub use routes::{
     top_state_disease_handler,
     top_state_health_metric_handler, 
     disease_trend_over_time_handler, 
-    health_trend_over_time_handler,
-    most_negative_habit_age_handler,
-    most_negative_habit_gender_handler,
-    most_negative_habit_ethnicity_handler
+    health_trend_over_time_handler
 };
 
 async fn connect_db(database_url: &str) -> Result<PgPool, Box<dyn Error>> {
@@ -96,9 +93,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .routes(routes!(crate::routes::top_state_disease_handler))
         .routes(routes!(crate::routes::disease_trend_over_time_handler))
         .routes(routes!(crate::routes::health_trend_over_time_handler))
-        .routes(routes!(crate::routes::most_negative_habit_age_handler))
-        .routes(routes!(crate::routes::most_negative_habit_gender_handler))
-        .routes(routes!(crate::routes::most_negative_habit_ethnicity_handler))
         .with_state(pool)
         .split_for_parts();
 
