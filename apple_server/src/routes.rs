@@ -29,6 +29,10 @@ use super::db::top_state_disease;
 use super::db::top_state_health_metric;
 use super::db::disease_trend_over_time;
 use super::db::health_trend_over_time;
+use super::db::most_negative_habit_age;
+use super::db::most_negative_habit_ethnicity;
+use super::db::most_negative_habit_gender;
+use super::db::disease_by_age_on_top5;
 
 
 // Input types
