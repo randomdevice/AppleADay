@@ -15,11 +15,11 @@ const Navbar = () => {
       </div>
       <div style={styles.links}>
         <NavLink
-          to="/metrics"
+          to="/explore/habit"
           style={styles.link}
           className={({ isActive }) => (isActive ? 'active-link' : '')}
         >
-          Health Map Explorer
+          Habit Explorer
         </NavLink>
         <NavLink
           to="/explore"

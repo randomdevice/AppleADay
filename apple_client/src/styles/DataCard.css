@@ -1,0 +1,140 @@
+.cards-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 960px; /* Max width for the container */
+  margin: auto;
+}
+
+/* Responsive layout for cards on larger screens */
+@media (min-width: 768px) {
+  .cards-container {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+}
+
+/* Styling for the individual card component */
+.card {
+  background-color: #ffffff;
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.3s ease-in-out;
+  width: 100%;
+  max-width: 24rem; /* Max width for a single card */
+  border: 1px solid #e5e7eb;
+}
+
+.card:hover {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Card header styling */
+.card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.card-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.card-title .icon {
+  color: #6b7280; /* gray-500 */
+}
+
+.card-header .card-title .icon {
+    color: #2563eb; /* blue-600 */
+}
+
+.card-body .card-item-label .icon {
+    color: #ef4444; /* red-500 */
+}
+
+
+.card-year {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+  background-color: #f3f4f6;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px; /* full rounded */
+}
+
+/* Card body styling */
+.card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  color: #374151;
+}
+
+.card-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-item-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.card-item-label .icon {
+  color: #6b7280; /* gray-500 */
+}
+
+.card-item-value {
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: #2563eb; /* blue-600 */
+}
+
+.card-list-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.card-list-item .bullet {
+  height: 0.5rem;
+  width: 0.5rem;
+  background-color: #f87171; /* red-400 */
+  border-radius: 9999px; /* full rounded */
+}
+
+.card-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #f3f4f6;
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.card-footer-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.card-footer-item .icon {
+  color: #9ca3af; /* gray-400 */
+}

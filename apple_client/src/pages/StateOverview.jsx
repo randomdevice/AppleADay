@@ -106,7 +106,7 @@ const StateOverview = () => {
     .domain([20, 40])
     .range(['#e0f3f3', '#ca0020']);
 
-  const getStateObesity = (state) => Math.round(mapData[state] * 100)/100;
+  const getPercentage = (state) => Math.round(mapData[state] * 100)/100;
 
   return (
     <div style={{ padding: '1rem 2rem' }}>
@@ -137,7 +137,7 @@ const StateOverview = () => {
               {({ geographies }) =>
                 geographies.map(geo => {
                   const state = geo.properties.name;
-                  const datum = getStateObesity(state);
+                  const datum = getPercentage(state);
                   const fill = datum ? colorScale(datum) : '#EEE';
 
                   return (

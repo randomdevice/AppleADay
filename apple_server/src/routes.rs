@@ -27,6 +27,11 @@ use super::db::top_state_health_metric;
 use super::db::disease_trend_over_time;
 use super::db::health_trend_over_time;
 
+use super::db::most_negative_habit_age;
+use super::db::most_negative_habit_gender;
+use super::db::most_negative_habit_ethnicity;
+
+
 
 // Input types
 use super::types::{Level, Disease};
@@ -284,6 +289,63 @@ pub async fn health_trend_over_time_handler(
 ) -> (StatusCode, Json<Value>) {
     let level = Some(params.level.unwrap_or("Obese".to_string()).trim_matches('"').to_string());
     health_trend_over_time(&pool, level)
+        .await
+        .map(|json| (StatusCode::OK, json))
+        .unwrap_or_else(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({}))))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/kpi/habit_correlation/population/age",
+    params(
+        ("level" = Option<String>, Query, description = "Health habit to query for.", example = "Obese")
+    ),
+    description = "Given a negative health habit, find give data on the most affected age adjusted population in the form of which chronic health condition."
+)]
+pub async fn most_negative_habit_age_handler(
+    State(pool): State<PgPool>,
+    Query(params): Query<Level>
+) -> (StatusCode, Json<Value>) {
+    let level = Some(params.level.unwrap_or("Obese".to_string()).trim_matches('"').to_string());
+    most_negative_habit_age(&pool, level)
+        .await
+        .map(|json| (StatusCode::OK, json))
+        .unwrap_or_else(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({}))))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/kpi/habit_correlation/population/gender",
+    params(
+        ("level" = Option<String>, Query, description = "Health habit to query for.", example = "Obese")
+    ),
+    description = "Given a negative health habit, find give data on the most affected gender adjusted population in the form of which chronic health condition."
+)]
+pub async fn most_negative_habit_gender_handler(
+    State(pool): State<PgPool>,
+    Query(params): Query<Level>
+) -> (StatusCode, Json<Value>) {
+    let level = Some(params.level.unwrap_or("Obese".to_string()).trim_matches('"').to_string());
+    most_negative_habit_gender(&pool, level)
+        .await
+        .map(|json| (StatusCode::OK, json))
+        .unwrap_or_else(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({}))))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/kpi/habit_correlation/population/ethnicity",
+    params(
+        ("level" = Option<String>, Query, description = "Health habit to query for.", example = "Obese")
+    ),
+    description = "Given a negative health habit, find give data on the most affected gender adjusted population in the form of which chronic health condition."
+)]
+pub async fn most_negative_habit_ethnicity_handler(
+    State(pool): State<PgPool>,
+    Query(params): Query<Level>
+) -> (StatusCode, Json<Value>) {
+    let level = Some(params.level.unwrap_or("Obese".to_string()).trim_matches('"').to_string());
+    most_negative_habit_ethnicity(&pool, level)
         .await
         .map(|json| (StatusCode::OK, json))
         .unwrap_or_else(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({}))))
