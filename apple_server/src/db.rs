@@ -121,6 +121,54 @@ where
     Ok(Json(json!(rows)))
 }
 
+pub async fn disease_map<'a, E>(
+        executor: E,
+        subtype: Option<String> 
+    ) -> Result<Json<Value>, sqlx::Error>
+where
+    E: Executor<'a, Database = sqlx::Postgres>,
+{
+
+	let rows = sqlx::query(
+            "SELECT
+                State,
+                StateCode,
+                AVG(Percentage) as OverallPercentage
+            FROM AgeAdjustedDiseasePopulation a JOIN ChronicDisease d ON a.disease = d.id
+            WHERE
+                SubType = $1 AND
+                Year = (SELECT MAX(Year) FROM AgeAdjustedDiseasePopulation ah JOIN chronicdisease d ON ah.disease = d.id
+                                         WHERE SubType = $1) AND
+                Percentage IS NOT NULL
+            GROUP BY State, StateCode;"
+        )
+        .bind(subtype.unwrap_or("Asthma".to_string())) 
+        .fetch_all(executor)
+        .await?; 
+
+	let results: Vec<Value> = rows.iter().map(|row| {
+		let state: String = row.try_get("state").unwrap_or_default();
+		//let statecode: String = row.try_get("statecode").unwrap_or_default();
+		let overallpercentage: f64 = row.try_get("overallpercentage").unwrap_or_default();
+		json!({
+			"state": state,
+			"overallpercentage": overallpercentage 
+		})
+	}).collect();
+
+    let mut result_map = Map::new();
+    for dict in results {
+        if let Value::Object(obj) = dict {
+            if let (Some(Value::String(state)), Some(percentage)) = (obj.get("state"), obj.get("overallpercentage"))
+            {
+                result_map.insert(state.clone(), percentage.clone());
+            }
+        }
+    }
+
+    Ok(axum::Json(Value::Object(result_map)))
+}
+
 pub async fn health_metric<'a, E>(
         executor: E,
         level: Option<String> 
@@ -130,16 +178,17 @@ where
 {
 
 	let rows = sqlx::query(
-       		 "SELECT
-       		     State,
-       		     StateCode,
-       		     SUM((Percentage * Sample_Size)) / SUM(Sample_Size) as OverallPercentage
-       		 FROM AgeAdjustedHealthPopulation a JOIN Habit h ON a.habit = h.id
-       		 WHERE
-       		     Level = $1 AND
-       		     Year = (SELECT MAX(Year) FROM AgeAdjustedHealthPopulation) AND 
-       		     Percentage IS NOT NULL
-       		 GROUP BY State, StateCode"
+            "SELECT
+                State,
+                StateCode,
+                SUM((Percentage * Sample_Size)) / SUM(Sample_Size) as OverallPercentage
+            FROM AgeAdjustedHealthPopulation a JOIN Habit h ON a.habit = h.id
+            WHERE
+                Level = $1 AND
+                Year = (SELECT MAX(Year) FROM AgeAdjustedHealthPopulation ah JOIN Habit h ON ah.habit = h.id 
+                                         WHERE Level = $1) AND
+                Percentage IS NOT NULL
+            GROUP BY State, StateCode"
         )
         .bind(level.unwrap_or("Obese".to_string())) 
         .fetch_all(executor)
@@ -433,7 +482,8 @@ where
         })
      }).collect();
 
-    Ok(axum::Json(json!(result[0])))
+    if result.len() > 0 { Ok(axum::Json(json!(result[0]))) }
+        else { Ok(axum::Json(json!({}))) }
 }
 
 
@@ -487,7 +537,8 @@ where
         })
      }).collect();
 
-    Ok(axum::Json(json!(result[0])))
+    if result.len() > 0 { Ok(axum::Json(json!(result[0]))) }
+        else { Ok(axum::Json(json!({}))) }
 }
 
 
@@ -541,5 +592,6 @@ where
         })
      }).collect();
 
-    Ok(axum::Json(json!(result[0])))
+    if result.len() > 0 { Ok(axum::Json(json!(result[0]))) }
+        else { Ok(axum::Json(json!({}))) }
 }

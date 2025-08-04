@@ -10,6 +10,7 @@ use serde_json::{json, Value};
 
 // SQLx functions
 use super::db::health_metric;
+use super::db::disease_map;
 use super::db::list_tables;
 use super::db::list_habits;
 use super::db::list_disease;
@@ -181,6 +182,25 @@ pub async fn health_metric_handler(
 
 #[utoipa::path(
     get,
+    path = "/api/v1/map/disease",
+    params(
+        ("subtype" = Option<String>, Query, description = "The disease subtype to query for.", example = "Asthma")
+    ),
+    description = "Queries statewide data for the current year of the average mortality of a given disease."
+)]
+pub async fn disease_map_handler(
+    State(pool): State<PgPool>,
+    Query(params): Query<Disease>
+) -> (StatusCode, Json<Value>) {
+    let subtype = Some(params.subtype.unwrap_or("Asthma".to_string()).trim_matches('"').to_string());
+    disease_map(&pool, subtype)
+        .await
+        .map(|json| (StatusCode::OK, json))
+        .unwrap_or_else(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({}))))
+}
+
+#[utoipa::path(
+    get,
     path = "/api/v1/kpi/national_average/disease",
     params(
         ("subtype" = Option<String>, Query, description = "The disease subtype to query for.", example = "Asthma")
@@ -300,7 +320,7 @@ pub async fn health_trend_over_time_handler(
     params(
         ("level" = Option<String>, Query, description = "Health habit to query for.", example = "Obese")
     ),
-    description = "Given a negative health habit, find give data on the most affected age adjusted population in the form of which chronic health condition."
+    description = "Given a negative health habit, find data on the most affected age adjusted population by the most correlated chronic health condition."
 )]
 pub async fn most_negative_habit_age_handler(
     State(pool): State<PgPool>,
@@ -319,7 +339,7 @@ pub async fn most_negative_habit_age_handler(
     params(
         ("level" = Option<String>, Query, description = "Health habit to query for.", example = "Obese")
     ),
-    description = "Given a negative health habit, find give data on the most affected gender adjusted population in the form of which chronic health condition."
+    description = "Given a health habit, find data on the most affected gender adjusted population by the most correlated chronic health condition."
 )]
 pub async fn most_negative_habit_gender_handler(
     State(pool): State<PgPool>,
@@ -338,7 +358,7 @@ pub async fn most_negative_habit_gender_handler(
     params(
         ("level" = Option<String>, Query, description = "Health habit to query for.", example = "Obese")
     ),
-    description = "Given a negative health habit, find give data on the most affected gender adjusted population in the form of which chronic health condition."
+    description = "Given a health habit, find data on the most affected ethnicity adjusted population by the most correlated chronic health condition."
 )]
 pub async fn most_negative_habit_ethnicity_handler(
     State(pool): State<PgPool>,

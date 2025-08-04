@@ -22,6 +22,7 @@ pub use routes::{
     list_disease_age_handler,
     list_genders_handler,
     health_metric_handler, 
+    disease_map_handler,
     national_average_disease_handler, 
     national_average_health_metric_handler,
     top_state_disease_handler,
@@ -88,6 +89,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .routes(routes!(crate::routes::list_disease_age_handler))
         .routes(routes!(crate::routes::list_genders_handler))
         .routes(routes!(crate::routes::health_metric_handler))
+        .routes(routes!(crate::routes::disease_map_handler))
         .routes(routes!(crate::routes::national_average_disease_handler))
         .routes(routes!(crate::routes::national_average_health_metric_handler))
         .routes(routes!(crate::routes::top_state_health_metric_handler))
