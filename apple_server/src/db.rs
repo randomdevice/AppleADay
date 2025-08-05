@@ -134,10 +134,10 @@ where
                 State,
                 StateCode,
                 AVG(Percentage) as OverallPercentage
-            FROM AgeAdjustedDiseasePopulation a JOIN ChronicDisease d ON a.disease = d.id
+            FROM genderadjusteddiseasepopulation a JOIN ChronicDisease d ON a.disease = d.id
             WHERE
                 SubType = $1 AND
-                Year = (SELECT MAX(Year) FROM AgeAdjustedDiseasePopulation ah JOIN chronicdisease d ON ah.disease = d.id
+                Year = (SELECT MAX(Year) FROM genderadjusteddiseasepopulation ah JOIN chronicdisease d ON ah.disease = d.id
                                          WHERE SubType = $1) AND
                 Percentage IS NOT NULL
             GROUP BY State, StateCode;"

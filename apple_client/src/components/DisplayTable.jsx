@@ -17,7 +17,7 @@ function DataTable({ data, diseaseType }) {
             {data.map((item) => (
                 <tr key={item.state}>
                 <td>{item.state}</td>
-                <td>{item.percentage}</td>
+                <td>{item.percentage}%</td>
                 </tr>
             ))}
             </tbody>

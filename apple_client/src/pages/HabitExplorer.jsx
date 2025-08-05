@@ -13,6 +13,8 @@ const HabitExplorer = () => {
   const [habitData, setHabitData] = useState([]);
   const [inputLevel, setInputLevel] = useState([]);
   const [inputType, setInputType] = useState([]);
+  const [mapMin, setMapMin] = useState(0);
+  const [mapMax, setMapMax] = useState(1);
   const [mapData, setMapData] = useState([]);
   const [hoveredState, setHoveredState] = useState('');
   const [agePopData, setAgePopData] = useState({});
@@ -23,7 +25,7 @@ const HabitExplorer = () => {
   const [ethnicityPopDataPos, setEthnicityPopDataPos] = useState({});
 
   useEffect(() => {
-    // Get map data
+    // Get habit data
     axios.get(`http://${config.server_host}:${config.server_port}/api/v1/habits`)
       .then(res => { 
           setHabitData(res.data)
@@ -33,9 +35,16 @@ const HabitExplorer = () => {
 
   useEffect(() => {
 
+      // get map data
     axios.get(`http://${config.server_host}:${config.server_port}/api/v1/map/health_metric?level=${inputLevel}`)
       .then(res => { 
           setMapData(res.data)
+
+          const values = Object.values(res.data);
+          const min = Math.min(...values);
+          const max = Math.max(...values);
+          setMapMin(min);
+          setMapMax(max);
       })
       .catch(console.error);
 
@@ -77,9 +86,17 @@ const HabitExplorer = () => {
 
   }, [inputLevel]);
 
-  const colorScale = scaleLinear()
-    .domain([20, 40])
-    .range(['#e0f3f3', '#ca0020']);
+  function colorScale(min, max, currentValue) {
+    // Create a D3 linear scale.
+    const myScale = scaleLinear();
+  
+    // Set the domain (the input range) using the min and max arguments.
+    // The range (the output) is set to [0, 1] to normalize the value.
+    myScale.domain([min, max]).range(['#e0f3f3', '#ca0020']);
+  
+    // Use the scale function to transform the currentValue and return the result.
+    return myScale(currentValue);
+  }
   
   const getPercentage = (state) => Math.round(mapData[state] * 100)/100;
 
@@ -102,7 +119,7 @@ const HabitExplorer = () => {
                 geographies.map(geo => {
                   const state = geo.properties.name;
                   const datum = getPercentage(state);
-                  const fill = datum ? colorScale(datum) : '#EEE';
+                  const fill = datum ? colorScale(mapMin, mapMax, datum) : '#EEE';
 
                   return (
                     <Geography
