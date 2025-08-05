@@ -23,6 +23,7 @@ const geoUrl = 'https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json';
 const StateOverview = () => {
   const [habitData, setHabitData] = useState([]);
   const [mapInput, setMapInput] = useState('Obese');
+  const [inputType, setInputType] = useState('');
   const [mapData, setMapData] = useState([]);
   const [hoveredState, setHoveredState] = useState('');
   const [nationalMortalityDiabetes, setNationalMortalityDiabetes] = useState({});
@@ -115,7 +116,7 @@ const StateOverview = () => {
         A nationwide glance at key health metrics in the United States
       </p>
 
-      <HabitSelector habitData={habitData} onViewResults={setMapInput}/>
+      <HabitSelector habitData={habitData}  onSetType={setInputType} onSetLevel={setMapInput}/>
       {/* KPI Cards */}
       <div style={{
           display: 'flex',

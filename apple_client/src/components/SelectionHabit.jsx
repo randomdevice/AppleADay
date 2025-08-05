@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import '../styles/SelectionDisease.css';
 
-const HabitSelector = ({ habitData, onViewResults }) => {
+const HabitSelector = ({ habitData, onSetType, onSetLevel }) => {
   // Get all unique "type" values from the habitData prop.
   const uniqueTypes = Array.from(new Set(habitData.map(item => item.type)));
 
@@ -34,7 +34,8 @@ const HabitSelector = ({ habitData, onViewResults }) => {
   // Handle the "View Results" button click.
   const handleViewResultsClick = () => {
     // Call the parent's function, passing the selected values as an object.
-    onViewResults(selectedLevel);
+    onSetType(selectedType);
+    onSetLevel(selectedLevel);
   };
 
   // Get the levels for the currently selected type to populate the second dropdown.

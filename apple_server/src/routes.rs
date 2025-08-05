@@ -381,7 +381,7 @@ pub async fn most_negative_habit_ethnicity_handler(
     get,
     path = "/api/v1/kpi/habit_correlation/population/age/positive",
     params(
-        ("type" = Option<String>, Query, description = "Health habit type to query for.", example = "Obesity / Weight Status")
+        ("category" = Option<String>, Query, description = "Health habit category to query for.", example = "Obesity / Weight Status")
     ),
     description = "Given a health habit, find data on the least affected age adjusted population by the most correlated chronic health condition."
 )]
@@ -389,7 +389,7 @@ pub async fn most_positive_habit_age_handler(
     State(pool): State<PgPool>,
     Query(params): Query<HabitType>
 ) -> (StatusCode, Json<Value>) {
-    let level = Some(params.htype.unwrap_or("Obesity / Weight Status".to_string()).trim_matches('"').to_string());
+    let level = Some(params.category.unwrap_or("Obesity / Weight Status".to_string()).trim_matches('"').to_string());
     most_positive_habit_age(&pool, level)
         .await
         .map(|json| (StatusCode::OK, json))
@@ -400,7 +400,7 @@ pub async fn most_positive_habit_age_handler(
     get,
     path = "/api/v1/kpi/habit_correlation/population/gender/positive",
     params(
-        ("type" = Option<String>, Query, description = "Health habit to query for.", example = "Obesity / Weight Status")
+        ("category" = Option<String>, Query, description = "Health habit category to query for.", example = "Obesity / Weight Status")
     ),
     description = "Given a health habit, find data on the least affected gender adjusted population by the most correlated chronic health condition."
 )]
@@ -408,7 +408,7 @@ pub async fn most_positive_habit_gender_handler(
     State(pool): State<PgPool>,
     Query(params): Query<HabitType>
 ) -> (StatusCode, Json<Value>) {
-    let level = Some(params.htype.unwrap_or("Obesity / Weight Status".to_string()).trim_matches('"').to_string());
+    let level = Some(params.category.unwrap_or("Obesity / Weight Status".to_string()).trim_matches('"').to_string());
     most_positive_habit_gender(&pool, level)
         .await
         .map(|json| (StatusCode::OK, json))
@@ -419,7 +419,7 @@ pub async fn most_positive_habit_gender_handler(
     get,
     path = "/api/v1/kpi/habit_correlation/population/ethnicity/positive",
     params(
-        ("type" = Option<String>, Query, description = "Health habit to query for.", example = "Obesity / Weight Status")
+        ("category" = Option<String>, Query, description = "Health habit category to query for.", example = "Obesity / Weight Status")
     ),
     description = "Given a health habit, find data on the least affected ethnicity adjusted population by the most correlated chronic health condition."
 )]
@@ -427,7 +427,7 @@ pub async fn most_positive_habit_ethnicity_handler(
     State(pool): State<PgPool>,
     Query(params): Query<HabitType>
 ) -> (StatusCode, Json<Value>) {
-    let level = Some(params.htype.unwrap_or("Obesity / Weight Status".to_string()).trim_matches('"').to_string());
+    let level = Some(params.category.unwrap_or("Obesity / Weight Status".to_string()).trim_matches('"').to_string());
     most_positive_habit_ethnicity(&pool, level)
         .await
         .map(|json| (StatusCode::OK, json))
