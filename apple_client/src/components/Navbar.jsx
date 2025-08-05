@@ -22,7 +22,7 @@ const Navbar = () => {
           Habit Explorer
         </NavLink>
         <NavLink
-          to="/explore"
+          to="/explore/disease"
           style={styles.link}
           className={({ isActive }) => (isActive ? 'active-link' : '')}
         >
