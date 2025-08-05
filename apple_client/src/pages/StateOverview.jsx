@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { ComposableMap, Geographies, Geography } from 'react-simple-maps';
 import {
   LineChart,
   Line,
@@ -7,45 +6,23 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer
 } from 'recharts';
 import axios from 'axios';
-import { scaleLinear } from 'd3-scale';
 import KPICard from '../components/KPICard';
-import SelectionDisease from '../components/SelectionDisease';
-import HabitSelector from '../components/SelectionHabit';
 import config from '../config.json';
 
-// US topoJSON
-const geoUrl = 'https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json';
 
 const StateOverview = () => {
-  const [habitData, setHabitData] = useState([]);
-  const [mapInput, setMapInput] = useState('Obese');
-  const [inputType, setInputType] = useState('');
-  const [mapData, setMapData] = useState([]);
-  const [hoveredState, setHoveredState] = useState('');
   const [nationalMortalityDiabetes, setNationalMortalityDiabetes] = useState({});
   const [topActiveState, setTopActiveState] = useState({});
   const [nationalInactivityRate, setNationalInactivityRate] = useState({});
   const [trendDataHeartDisease, setTrendDataHeartDisease] = useState([]);
   const [trendDataPhysicalActivity, setTrendDataPhysicalActivity] = useState([]);
+  const [trendDataObesity, setTrendDataObesity] = useState([]);
+  const [trendDataCancer, setTrendCancer] = useState([]);
 
   useEffect(() => {
-    // Get map data
-    axios.get(`http://${config.server_host}:${config.server_port}/api/v1/habits`)
-      .then(res => { 
-          setHabitData(res.data)
-      })
-      .catch(console.error);
-
-    // Fetch default map metric: obesity
-    axios.get(`http://${config.server_host}:${config.server_port}/api/v1/map/health_metric?level=${mapInput}`)
-      .then(res => { 
-          setMapData(res.data)
-      })
-      .catch(console.error);
 
     // Fetch national KPIs
     axios.get(`http://${config.server_host}:${config.server_port}/api/v1/kpi/national_average/disease?subtype=Diabetes`)
@@ -92,22 +69,39 @@ const StateOverview = () => {
           setTrendDataPhysicalActivity(preprocess)
       })
       .catch(console.error);
-  }, []);
 
-  useEffect(() => {
-    // Fetch default map metric: obesity
-    axios.get(`http://${config.server_host}:${config.server_port}/api/v1/map/health_metric?level=${mapInput}`)
+    axios.get(`http://${config.server_host}:${config.server_port}/api/v1/trends/national/health_metric?level=Obese`)
       .then(res => { 
-          setMapData(res.data)
+          const preprocess = res.data.map(item => {
+            const rounded = parseFloat(item.nationalaverage.toFixed(3));
+            return {
+                ...item,
+                nationalaverage: rounded,
+            }
+          });
+          setTrendDataObesity(preprocess)
       })
       .catch(console.error);
-  }, [mapInput]);
 
-  const colorScale = scaleLinear()
-    .domain([20, 40])
-    .range(['#e0f3f3', '#ca0020']);
+    axios.get(`http://${config.server_host}:${config.server_port}/api/v1/trends/national/disease?subtype=Any%20Cancer`)
+      .then(res => { 
+          const preprocess = res.data.map(item => {
+            const rounded = parseFloat(item.nationalaverage.toFixed(3));
+            return {
+                ...item,
+                nationalaverage: rounded,
+            }
+          });
+          setTrendCancer(preprocess)
+      })
+      .catch(console.error);
+  }, []);
 
-  const getPercentage = (state) => Math.round(mapData[state] * 100)/100;
+  //const colorScale = scaleLinear()
+  //  .domain([20, 40])
+  //  .range(['#e0f3f3', '#ca0020']);
+
+  //const getPercentage = (state) => Math.round(mapData[state] * 100)/100;
 
   return (
     <div style={{ padding: '1rem 2rem' }}>
@@ -116,7 +110,6 @@ const StateOverview = () => {
         A nationwide glance at key health metrics in the United States
       </p>
 
-      <HabitSelector habitData={habitData}  onSetType={setInputType} onSetLevel={setMapInput}/>
       {/* KPI Cards */}
       <div style={{
           display: 'flex',
@@ -129,39 +122,6 @@ const StateOverview = () => {
           <KPICard title="National Inactivity Average" value={`${nationalInactivityRate ?? 'N/A'}%`} />
         </div>
 
-      {/* Map */}
-      <div style={{ display: 'flex', justifyContent: 'space-around' }}>
-        <div style={{ width: '55%', alignItems: 'center' }}>
-          <h2> Percentage {mapInput} In {hoveredState}</h2>
-          <ComposableMap projection="geoAlbersUsa">
-            <Geographies geography={geoUrl}>
-              {({ geographies }) =>
-                geographies.map(geo => {
-                  const state = geo.properties.name;
-                  const datum = getPercentage(state);
-                  const fill = datum ? colorScale(datum) : '#EEE';
-
-                  return (
-                    <Geography
-                      key={geo.rsmKey}
-                      geography={geo}
-                      onMouseEnter={() =>
-                        setHoveredState(`${state}: ${datum ?? 'N/A'}%`)
-                      }
-                      onMouseLeave={() => setHoveredState('')}
-                      style={{
-                        default: { fill, outline: 'none' },
-                        hover: { fill: '#FFD700', outline: 'none' },
-                        pressed: { fill: '#FF6347', outline: 'none' },
-                      }}
-                    />
-                  );
-                })
-              }
-            </Geographies>
-          </ComposableMap>
-        </div>
-      </div>
 
       {/* Trends */}
       <div style={{ marginTop: '3rem' }}>
@@ -173,16 +133,28 @@ const StateOverview = () => {
              gap: '1 px', // Space between the chart containers
              alignItems: 'flex-start' // Aligns items to the top if heights differ
         }}>
-            <div style={{ flex: 1, minWidth: '450px' }}>
+            <div style={{ flex: 1, minWidth: '50%' }}>
                  <TrendChart
                    chartData={trendDataHeartDisease}
                    title="Heart Disease Mortality"
                  />
             </div>
-            <div style={{ flex: 1, minWidth: '450px' }}>
+            <div style={{ flex: 1, minWidth: '50%' }}>
                 <TrendChart
                   chartData={trendDataPhysicalActivity}
-                  title="Physical Inactivity"
+                  title="Physical Inactivity Rates"
+                />
+            </div>
+            <div style={{ flex: 1, minWidth: '50%' }}>
+                 <TrendChart
+                   chartData={trendDataCancer}
+                   title="Cancer Mortality"
+                 />
+            </div>
+            <div style={{ flex: 1, minWidth: '50%' }}>
+                <TrendChart
+                  chartData={trendDataObesity}
+                  title="Obesity Rates"
                 />
             </div>
         </div>

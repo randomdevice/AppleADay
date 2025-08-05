@@ -3,6 +3,8 @@ import axios from 'axios';
 import HabitSelector from '../components/SelectionHabit';
 import DataCard from '../components/DataCard';
 import config from '../config.json';
+import { scaleLinear } from 'd3-scale';
+import { ComposableMap, Geographies, Geography } from 'react-simple-maps';
 
 // US topoJSON
 const geoUrl = 'https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json';
@@ -11,6 +13,8 @@ const HabitExplorer = () => {
   const [habitData, setHabitData] = useState([]);
   const [inputLevel, setInputLevel] = useState([]);
   const [inputType, setInputType] = useState([]);
+  const [mapData, setMapData] = useState([]);
+  const [hoveredState, setHoveredState] = useState('');
   const [agePopData, setAgePopData] = useState({});
   const [genderPopData, setGenderPopData] = useState({});
   const [ethnicityPopData, setEthnicityPopData] = useState({});
@@ -28,6 +32,13 @@ const HabitExplorer = () => {
   }, []);
 
   useEffect(() => {
+
+    axios.get(`http://${config.server_host}:${config.server_port}/api/v1/map/health_metric?level=${inputLevel}`)
+      .then(res => { 
+          setMapData(res.data)
+      })
+      .catch(console.error);
+
     axios.get(`http://${config.server_host}:${config.server_port}/api/v1/kpi/habit_correlation/population/age/negative?level=${inputLevel}`)
       .then(res => { 
           setAgePopData(res.data)
@@ -66,6 +77,12 @@ const HabitExplorer = () => {
 
   }, [inputLevel]);
 
+  const colorScale = scaleLinear()
+    .domain([20, 40])
+    .range(['#e0f3f3', '#ca0020']);
+  
+  const getPercentage = (state) => Math.round(mapData[state] * 100)/100;
+
   return (
     <div style={{ padding: '1rem 2rem' }}>
       <h1 style={{ textAlign: 'center' }}>Habit Explorer</h1>
@@ -74,6 +91,41 @@ const HabitExplorer = () => {
       </p>
 
       <HabitSelector habitData={habitData} onSetType={setInputType} onSetLevel={setInputLevel}/>
+
+      {/* Map */}
+      <div style={{ display: 'flex', justifyContent: 'space-around' }}>
+        <div style={{ width: '55%', alignItems: 'center' }}>
+          <h2> Percentage {inputLevel} In {hoveredState}</h2>
+          <ComposableMap projection="geoAlbersUsa">
+            <Geographies geography={geoUrl}>
+              {({ geographies }) =>
+                geographies.map(geo => {
+                  const state = geo.properties.name;
+                  const datum = getPercentage(state);
+                  const fill = datum ? colorScale(datum) : '#EEE';
+
+                  return (
+                    <Geography
+                      key={geo.rsmKey}
+                      geography={geo}
+                      onMouseEnter={() =>
+                        setHoveredState(`${state}: ${datum ?? 'N/A'}%`)
+                      }
+                      onMouseLeave={() => setHoveredState('')}
+                      style={{
+                        default: { fill, outline: 'none' },
+                        hover: { fill: '#FFD700', outline: 'none' },
+                        pressed: { fill: '#FF6347', outline: 'none' },
+                      }}
+                    />
+                  );
+                })
+              }
+            </Geographies>
+          </ComposableMap>
+        </div>
+      </div>
+
       {/* KPI Cards */}
       <h2 style={{ textAlign: 'center' }}>Most Affected Populations based on Habit Level</h2>
       <div style={{
