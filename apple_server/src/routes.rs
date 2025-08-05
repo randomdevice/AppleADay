@@ -8,28 +8,38 @@ use axum::{
 use sqlx::PgPool;
 use serde_json::{json, Value};
 
-// SQLx functions
-use super::db::health_metric;
+// SQLx list functions
 use super::db::list_tables;
 use super::db::list_habits;
 use super::db::list_disease;
-
-use super::db::list_health_demographics;
-use super::db::list_disease_demographics;
-use super::db::list_health_age;
 use super::db::list_disease_age;
+use super::db::list_disease_demographics;
+use super::db::list_health_demographics;
+use super::db::list_health_age;
 use super::db::list_genders;
 
+// SQLx map information
+use super::db::health_metric_map;
+use super::db::disease_map;
+
+// SQLx KPIs
 use super::db::national_average_disease;
 use super::db::national_average_health_metric;
 use super::db::top_state_disease;
 use super::db::top_state_health_metric;
 use super::db::disease_trend_over_time;
 use super::db::health_trend_over_time;
-
+use super::db::most_negative_habit_age;
+use super::db::most_negative_habit_ethnicity;
+use super::db::most_negative_habit_gender;
+use super::db::most_positive_habit_age;
+use super::db::most_positive_habit_ethnicity;
+use super::db::most_positive_habit_gender;
+use super::db::state_average_disease;
+use super::db::disease_by_age_on_top5;
 
 // Input types
-use super::types::{Level, Disease};
+use super::types::{Level, HabitType, Disease, StateDisease};
 
 // basic handler that responds with a static string
 #[utoipa::path(
@@ -115,20 +125,6 @@ pub async fn list_disease_demographics_handler(
 
 #[utoipa::path(
     get,
-    path = "/api/v1/health_metric/demographics",
-    description = "Get list of demographics associated with health_metric tables."
-)]
-pub async fn list_health_demographics_handler(
-    State(pool): State<PgPool>,
-) -> (StatusCode, Json<Value>) {
-    list_health_demographics(&pool)
-        .await
-        .map(|json| (StatusCode::OK, json))
-        .unwrap_or_else(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({}))))
-}
-
-#[utoipa::path(
-    get,
     path = "/api/v1/health_metric/age",
     description = "Get list of age ranges associated with health_metric tables."
 )]
@@ -136,6 +132,20 @@ pub async fn list_health_age_handler(
     State(pool): State<PgPool>,
 ) -> (StatusCode, Json<Value>) {
     list_health_age(&pool)
+        .await
+        .map(|json| (StatusCode::OK, json))
+        .unwrap_or_else(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({}))))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/health_metric/demographics",
+    description = "Get list of demographics associated with health_metric tables."
+)]
+pub async fn list_health_demographics_handler(
+    State(pool): State<PgPool>,
+) -> (StatusCode, Json<Value>) {
+    list_health_demographics(&pool)
         .await
         .map(|json| (StatusCode::OK, json))
         .unwrap_or_else(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({}))))
@@ -163,12 +173,31 @@ pub async fn list_genders_handler(
     ),
     description = "Queries statewide data for the current year of the average level of a given health metric."
 )]
-pub async fn health_metric_handler(
+pub async fn health_metric_map_handler(
     State(pool): State<PgPool>,
     Query(params): Query<Level>
 ) -> (StatusCode, Json<Value>) {
     let level = Some(params.level.unwrap_or("Obese".to_string()).trim_matches('"').to_string());
-    health_metric(&pool, level)
+    health_metric_map(&pool, level)
+        .await
+        .map(|json| (StatusCode::OK, json))
+        .unwrap_or_else(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({}))))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/map/disease",
+    params(
+        ("subtype" = Option<String>, Query, description = "The disease subtype to query for.", example = "Asthma")
+    ),
+    description = "Queries statewide data for the current year of the average mortality of a given disease."
+)]
+pub async fn disease_map_handler(
+    State(pool): State<PgPool>,
+    Query(params): Query<Disease>
+) -> (StatusCode, Json<Value>) {
+    let subtype = Some(params.subtype.unwrap_or("Asthma".to_string()).trim_matches('"').to_string());
+    disease_map(&pool, subtype)
         .await
         .map(|json| (StatusCode::OK, json))
         .unwrap_or_else(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({}))))
@@ -236,7 +265,8 @@ pub async fn top_state_health_metric_handler(
     get,
     path = "/api/v1/kpi/top_state/disease",
     params(
-        ("subtype" = Option<String>, Query, description = "The health metric level to query for.", example = "Asthma")
+        ("subtype" = Option<String>, Query, description = "The health metric level to query for.", example = "Asthma"),
+        ("top" = Option<i32>, Query, description = "The top N states to return.", example = "1")
     ),
     description = "Returns a KPI representing the top state of a disease subtype."
 )]
@@ -245,7 +275,8 @@ pub async fn top_state_disease_handler(
     Query(params): Query<Disease>
 ) -> (StatusCode, Json<Value>) {
     let disease = Some(params.subtype.unwrap_or("Asthma".to_string()).trim_matches('"').to_string());
-    top_state_disease(&pool, disease)
+    let top = Some(params.top.unwrap_or(1));
+    top_state_disease(&pool, disease, top)
         .await
         .map(|json| (StatusCode::OK, json))
         .unwrap_or_else(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({}))))
@@ -284,6 +315,160 @@ pub async fn health_trend_over_time_handler(
 ) -> (StatusCode, Json<Value>) {
     let level = Some(params.level.unwrap_or("Obese".to_string()).trim_matches('"').to_string());
     health_trend_over_time(&pool, level)
+        .await
+        .map(|json| (StatusCode::OK, json))
+        .unwrap_or_else(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({}))))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/kpi/habit_correlation/population/age/negative",
+    params(
+        ("level" = Option<String>, Query, description = "Health habit to query for.", example = "Obese")
+    ),
+    description = "Given a negative health habit, find data on the most affected age adjusted population by the most correlated chronic health condition."
+)]
+pub async fn most_negative_habit_age_handler(
+    State(pool): State<PgPool>,
+    Query(params): Query<Level>
+) -> (StatusCode, Json<Value>) {
+    let level = Some(params.level.unwrap_or("Obese".to_string()).trim_matches('"').to_string());
+    most_negative_habit_age(&pool, level)
+        .await
+        .map(|json| (StatusCode::OK, json))
+        .unwrap_or_else(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({}))))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/kpi/habit_correlation/population/gender/negative",
+    params(
+        ("level" = Option<String>, Query, description = "Health habit to query for.", example = "Obese")
+    ),
+    description = "Given a health habit, find data on the most affected gender adjusted population by the most correlated chronic health condition."
+)]
+pub async fn most_negative_habit_gender_handler(
+    State(pool): State<PgPool>,
+    Query(params): Query<Level>
+) -> (StatusCode, Json<Value>) {
+    let level = Some(params.level.unwrap_or("Obese".to_string()).trim_matches('"').to_string());
+    most_negative_habit_gender(&pool, level)
+        .await
+        .map(|json| (StatusCode::OK, json))
+        .unwrap_or_else(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({}))))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/kpi/habit_correlation/population/ethnicity/negative",
+    params(
+        ("level" = Option<String>, Query, description = "Health habit to query for.", example = "Obese")
+    ),
+    description = "Given a health habit, find data on the most affected ethnicity adjusted population by the most correlated chronic health condition."
+)]
+pub async fn most_negative_habit_ethnicity_handler(
+    State(pool): State<PgPool>,
+    Query(params): Query<Level>
+) -> (StatusCode, Json<Value>) {
+    let level = Some(params.level.unwrap_or("Obese".to_string()).trim_matches('"').to_string());
+    most_negative_habit_ethnicity(&pool, level)
+        .await
+        .map(|json| (StatusCode::OK, json))
+        .unwrap_or_else(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({}))))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/kpi/habit_correlation/population/age/positive",
+    params(
+        ("category" = Option<String>, Query, description = "Health habit category to query for.", example = "Obesity / Weight Status")
+    ),
+    description = "Given a health habit, find data on the least affected age adjusted population by the most correlated chronic health condition."
+)]
+pub async fn most_positive_habit_age_handler(
+    State(pool): State<PgPool>,
+    Query(params): Query<HabitType>
+) -> (StatusCode, Json<Value>) {
+    let level = Some(params.category.unwrap_or("Obesity / Weight Status".to_string()).trim_matches('"').to_string());
+    most_positive_habit_age(&pool, level)
+        .await
+        .map(|json| (StatusCode::OK, json))
+        .unwrap_or_else(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({}))))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/kpi/habit_correlation/population/gender/positive",
+    params(
+        ("category" = Option<String>, Query, description = "Health habit category to query for.", example = "Obesity / Weight Status")
+    ),
+    description = "Given a health habit, find data on the least affected gender adjusted population by the most correlated chronic health condition."
+)]
+pub async fn most_positive_habit_gender_handler(
+    State(pool): State<PgPool>,
+    Query(params): Query<HabitType>
+) -> (StatusCode, Json<Value>) {
+    let level = Some(params.category.unwrap_or("Obesity / Weight Status".to_string()).trim_matches('"').to_string());
+    most_positive_habit_gender(&pool, level)
+        .await
+        .map(|json| (StatusCode::OK, json))
+        .unwrap_or_else(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({}))))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/kpi/habit_correlation/population/ethnicity/positive",
+    params(
+        ("category" = Option<String>, Query, description = "Health habit category to query for.", example = "Obesity / Weight Status")
+    ),
+    description = "Given a health habit, find data on the least affected ethnicity adjusted population by the most correlated chronic health condition."
+)]
+pub async fn most_positive_habit_ethnicity_handler(
+    State(pool): State<PgPool>,
+    Query(params): Query<HabitType>
+) -> (StatusCode, Json<Value>) {
+    let level = Some(params.category.unwrap_or("Obesity / Weight Status".to_string()).trim_matches('"').to_string());
+    most_positive_habit_ethnicity(&pool, level)
+        .await
+        .map(|json| (StatusCode::OK, json))
+        .unwrap_or_else(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({}))))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/trends/states_top5/disease",
+    params(
+        ("subtype" = Option<String>, Query, description = "The subtype of diseases to query for.", example = "Diabetes")
+    ),
+    description = "Trend of Diabetes Across Age Groups in Top 5 States by Average Prevalence"
+)]
+pub async fn disease_by_age_on_top5_handler(
+    State(pool): State<PgPool>,
+    Query(params): Query<Disease>
+) -> (StatusCode, Json<Value>) {
+    let disease = Some(params.subtype.unwrap_or("Asthma".to_string()).trim_matches('"').to_string());
+    disease_by_age_on_top5(&pool, disease)
+        .await
+        .map(|json| (StatusCode::OK, json))
+        .unwrap_or_else(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({}))))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/trends/states/disease",
+    params(
+        ("subtype" = Option<String>, Query, description = "The subtype of diseases to query for.", example = "Diabetes"),
+        ("state" = Option<String>, Query, description = "The state to query for.", example = "California")
+    ),
+    description = "The state-wise average trends of the specific disease."
+)]
+pub async fn state_average_disease_handler(
+    State(pool): State<PgPool>,
+    Query(params): Query<StateDisease>
+) -> (StatusCode, Json<Value>) {
+    let subtype = Some(params.subtype.unwrap_or("Asthma".to_string()).trim_matches('"').to_string());
+    let state = Some(params.state.unwrap_or("California".to_string()).trim_matches('"').to_string());
+    state_average_disease(&pool, subtype, state)
         .await
         .map(|json| (StatusCode::OK, json))
         .unwrap_or_else(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({}))))
