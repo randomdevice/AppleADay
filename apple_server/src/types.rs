@@ -1,5 +1,11 @@
 use serde::{Deserialize, Serialize};
 
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct HabitType {
+    pub htype: Option<String>,
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Level {
     pub level: Option<String>,

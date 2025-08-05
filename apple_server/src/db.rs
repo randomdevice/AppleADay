@@ -148,7 +148,6 @@ where
 
 	let results: Vec<Value> = rows.iter().map(|row| {
 		let state: String = row.try_get("state").unwrap_or_default();
-		//let statecode: String = row.try_get("statecode").unwrap_or_default();
 		let overallpercentage: f64 = row.try_get("overallpercentage").unwrap_or_default();
 		json!({
 			"state": state,
@@ -618,6 +617,191 @@ where
         let state: String = row.try_get("state").unwrap_or_default();
         let ethnicity: String = row.try_get("ethnicity").unwrap_or_default();
         let disease_type: String = row.try_get("disease_type").unwrap_or_default();
+        let disease_subtype: String = row.try_get("subtype").unwrap_or_default();
+        let differential: f64 = row.try_get("difference").unwrap_or_default();
+        json!({ 
+            "year": year, 
+            "state": state,
+            "ethnicity": ethnicity, 
+            "disease_type": disease_type,
+            "disease_subtype": disease_subtype,
+            "differential": differential,
+        })
+     }).collect();
+
+    if result.len() > 0 { Ok(axum::Json(json!(result[0]))) }
+        else { Ok(axum::Json(json!({}))) }
+}
+
+pub async fn most_positive_habit_age<'a, E>(
+        executor: E,
+        level: Option<String> 
+    ) -> Result<Json<Value>, sqlx::Error>
+where
+    E: Executor<'a, Database = sqlx::Postgres>,
+{
+
+	let rows = sqlx::query(
+        "
+        WITH adhp2 AS (
+            SELECT adhp.year, adhp.state, adhp.age, h.type,
+                   100 - SUM(adhp.percentage) AS percentage
+            FROM ageadjustedhealthpopulation adhp JOIN
+                 (SELECT * FROM habit WHERE habit.type = $1) h
+                 ON adhp.habit = h.id
+            WHERE adhp.percentage IS NOT NULL
+            GROUP BY adhp.year, adhp.state, adhp.age, h.type
+        )
+        SELECT
+            addp.year, addp.state, addp.age, addp.percentage,
+            cd.type, cd.subtype,
+            adhp2.percentage,
+            adhp2.percentage - addp.percentage AS difference
+        FROM
+            adhp2
+                JOIN
+            (SELECT year, state, age, percentage, disease FROM ageadjusteddiseasepopulation
+             WHERE percentage IS NOT NULL and percentage != 0) addp
+            ON
+                addp.year = adhp2.year AND addp.state = adhp2.state AND addp.age = adhp2.age
+                JOIN chronicdisease cd ON addp.disease = cd.id
+        ORDER BY difference DESC
+        LIMIT 1;
+        "
+        )
+        .bind(level.unwrap_or("Fruits and Vegetables".to_string())) 
+        .fetch_all(executor)
+        .await?; 
+
+     let result: Vec<Value> = rows.iter().map(|row| {
+        let year: i32 = row.try_get("year").unwrap_or_default();
+        let state: String = row.try_get("state").unwrap_or_default();
+        let age: String = row.try_get("age").unwrap_or_default();
+        let disease_type: String = row.try_get("type").unwrap_or_default();
+        let disease_subtype: String = row.try_get("subtype").unwrap_or_default();
+        let differential: f64 = row.try_get("difference").unwrap_or_default();
+        json!({ 
+            "year": year, 
+            "state": state,
+            "age": age,
+            "disease_type": disease_type,
+            "disease_subtype": disease_subtype,
+            "differential": differential,
+        })
+     }).collect();
+
+    if result.len() > 0 { Ok(axum::Json(json!(result[0]))) }
+        else { Ok(axum::Json(json!({}))) }
+}
+
+
+pub async fn most_positive_habit_gender<'a, E>(
+        executor: E,
+        level: Option<String> 
+    ) -> Result<Json<Value>, sqlx::Error>
+where
+    E: Executor<'a, Database = sqlx::Postgres>,
+{
+
+	let rows = sqlx::query(
+        "
+        WITH gdhp2 AS (
+            SELECT gdhp.year, gdhp.state, gdhp.sex, h.type,
+                   100 - SUM(gdhp.percentage) AS percentage
+            FROM genderadjustedhealthpopulation gdhp JOIN
+                 (SELECT * FROM habit WHERE habit.type = $1) h
+                 ON gdhp.habit = h.id
+            WHERE gdhp.percentage IS NOT NULL
+            GROUP BY gdhp.year, gdhp.state, gdhp.sex, h.type
+        )
+        SELECT
+            gddp.year, gddp.state, gddp.sex, gddp.percentage,
+            cd.type, cd.subtype,
+            gdhp2.percentage,
+            gdhp2.percentage - gddp.percentage AS difference
+        FROM
+            gdhp2
+                JOIN
+            (SELECT year, state, sex, percentage, disease FROM genderadjusteddiseasepopulation
+             WHERE percentage IS NOT NULL and percentage != 0) gddp
+            ON
+                gddp.year = gdhp2.year AND gddp.state = gdhp2.state AND gddp.sex = gdhp2.sex
+                JOIN chronicdisease cd ON gddp.disease = cd.id
+        ORDER BY difference DESC
+        LIMIT 1;
+        "
+        )
+        .bind(level.unwrap_or("Obesity / Weight Status".to_string())) 
+        .fetch_all(executor)
+        .await?; 
+
+     let result: Vec<Value> = rows.iter().map(|row| {
+        let year: i32 = row.try_get("year").unwrap_or_default();
+        let state: String = row.try_get("state").unwrap_or_default();
+        let sex: String = row.try_get("sex").unwrap_or_default();
+        let disease_type: String = row.try_get("type").unwrap_or_default();
+        let disease_subtype: String = row.try_get("subtype").unwrap_or_default();
+        let differential: f64 = row.try_get("difference").unwrap_or_default();
+        json!({ 
+            "year": year, 
+            "state": state,
+            "sex": sex, 
+            "disease_type": disease_type,
+            "disease_subtype": disease_subtype,
+            "differential": differential,
+        })
+     }).collect();
+
+    if result.len() > 0 { Ok(axum::Json(json!(result[0]))) }
+        else { Ok(axum::Json(json!({}))) }
+}
+
+
+pub async fn most_positive_habit_ethnicity<'a, E>(
+        executor: E,
+        level: Option<String> 
+    ) -> Result<Json<Value>, sqlx::Error>
+where
+    E: Executor<'a, Database = sqlx::Postgres>,
+{
+
+	let rows = sqlx::query(
+        "
+        WITH edhp2 AS (
+            SELECT edhp.year, edhp.state, edhp.ethnicity, h.type,
+                   100 - SUM(edhp.percentage) AS percentage
+            FROM ethnicityadjustedhealthpopulation edhp JOIN
+                 (SELECT * FROM habit WHERE habit.type = $1) h
+                 ON edhp.habit = h.id
+            WHERE edhp.percentage IS NOT NULL
+            GROUP BY edhp.year, edhp.state, edhp.ethnicity, h.type
+        )
+        SELECT
+            eddp.year, eddp.state, eddp.ethnicity, eddp.percentage,
+            cd.type, cd.subtype,
+            edhp2.percentage,
+            edhp2.percentage - eddp.percentage AS difference
+        FROM
+            edhp2
+                JOIN
+            (SELECT year, state, ethnicity, percentage, disease FROM ethnicityadjusteddiseasepopulation
+             WHERE percentage IS NOT NULL and percentage != 0) eddp
+            ON
+                eddp.year = edhp2.year AND eddp.state = edhp2.state AND eddp.ethnicity = edhp2.ethnicity
+                JOIN chronicdisease cd ON eddp.disease = cd.id
+        ORDER BY difference DESC
+        LIMIT 1;
+        "
+        )
+        .bind(level.unwrap_or("Obesity / Weight Status".to_string())) 
+        .fetch_all(executor)
+        .await?; 
+
+     let result: Vec<Value> = rows.iter().map(|row| {
+        let year: i32 = row.try_get("year").unwrap_or_default();
+        let state: String = row.try_get("state").unwrap_or_default();
+        let ethnicity: String = row.try_get("ethnicity").unwrap_or_default();
+        let disease_type: String = row.try_get("type").unwrap_or_default();
         let disease_subtype: String = row.try_get("subtype").unwrap_or_default();
         let differential: f64 = row.try_get("difference").unwrap_or_default();
         json!({ 

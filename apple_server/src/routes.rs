@@ -32,12 +32,14 @@ use super::db::health_trend_over_time;
 use super::db::most_negative_habit_age;
 use super::db::most_negative_habit_ethnicity;
 use super::db::most_negative_habit_gender;
-
+use super::db::most_positive_habit_age;
+use super::db::most_positive_habit_ethnicity;
+use super::db::most_positive_habit_gender;
 use super::db::state_average_disease;
 use super::db::disease_by_age_on_top5;
 
 // Input types
-use super::types::{Level, Disease, StateDisease};
+use super::types::{Level, HabitType, Disease, StateDisease};
 
 // basic handler that responds with a static string
 #[utoipa::path(
@@ -320,7 +322,7 @@ pub async fn health_trend_over_time_handler(
 
 #[utoipa::path(
     get,
-    path = "/api/v1/kpi/habit_correlation/population/age",
+    path = "/api/v1/kpi/habit_correlation/population/age/negative",
     params(
         ("level" = Option<String>, Query, description = "Health habit to query for.", example = "Obese")
     ),
@@ -339,7 +341,7 @@ pub async fn most_negative_habit_age_handler(
 
 #[utoipa::path(
     get,
-    path = "/api/v1/kpi/habit_correlation/population/gender",
+    path = "/api/v1/kpi/habit_correlation/population/gender/negative",
     params(
         ("level" = Option<String>, Query, description = "Health habit to query for.", example = "Obese")
     ),
@@ -358,7 +360,7 @@ pub async fn most_negative_habit_gender_handler(
 
 #[utoipa::path(
     get,
-    path = "/api/v1/kpi/habit_correlation/population/ethnicity",
+    path = "/api/v1/kpi/habit_correlation/population/ethnicity/negative",
     params(
         ("level" = Option<String>, Query, description = "Health habit to query for.", example = "Obese")
     ),
@@ -370,6 +372,63 @@ pub async fn most_negative_habit_ethnicity_handler(
 ) -> (StatusCode, Json<Value>) {
     let level = Some(params.level.unwrap_or("Obese".to_string()).trim_matches('"').to_string());
     most_negative_habit_ethnicity(&pool, level)
+        .await
+        .map(|json| (StatusCode::OK, json))
+        .unwrap_or_else(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({}))))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/kpi/habit_correlation/population/age/positive",
+    params(
+        ("type" = Option<String>, Query, description = "Health habit type to query for.", example = "Obesity / Weight Status")
+    ),
+    description = "Given a health habit, find data on the least affected age adjusted population by the most correlated chronic health condition."
+)]
+pub async fn most_positive_habit_age_handler(
+    State(pool): State<PgPool>,
+    Query(params): Query<HabitType>
+) -> (StatusCode, Json<Value>) {
+    let level = Some(params.htype.unwrap_or("Obesity / Weight Status".to_string()).trim_matches('"').to_string());
+    most_positive_habit_age(&pool, level)
+        .await
+        .map(|json| (StatusCode::OK, json))
+        .unwrap_or_else(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({}))))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/kpi/habit_correlation/population/gender/positive",
+    params(
+        ("type" = Option<String>, Query, description = "Health habit to query for.", example = "Obesity / Weight Status")
+    ),
+    description = "Given a health habit, find data on the least affected gender adjusted population by the most correlated chronic health condition."
+)]
+pub async fn most_positive_habit_gender_handler(
+    State(pool): State<PgPool>,
+    Query(params): Query<HabitType>
+) -> (StatusCode, Json<Value>) {
+    let level = Some(params.htype.unwrap_or("Obesity / Weight Status".to_string()).trim_matches('"').to_string());
+    most_positive_habit_gender(&pool, level)
+        .await
+        .map(|json| (StatusCode::OK, json))
+        .unwrap_or_else(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({}))))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/kpi/habit_correlation/population/ethnicity/positive",
+    params(
+        ("type" = Option<String>, Query, description = "Health habit to query for.", example = "Obesity / Weight Status")
+    ),
+    description = "Given a health habit, find data on the least affected ethnicity adjusted population by the most correlated chronic health condition."
+)]
+pub async fn most_positive_habit_ethnicity_handler(
+    State(pool): State<PgPool>,
+    Query(params): Query<HabitType>
+) -> (StatusCode, Json<Value>) {
+    let level = Some(params.htype.unwrap_or("Obesity / Weight Status".to_string()).trim_matches('"').to_string());
+    most_positive_habit_ethnicity(&pool, level)
         .await
         .map(|json| (StatusCode::OK, json))
         .unwrap_or_else(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({}))))

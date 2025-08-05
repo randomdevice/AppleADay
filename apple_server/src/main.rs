@@ -30,6 +30,9 @@ pub use routes::{
     most_negative_habit_age_handler,
     most_negative_habit_ethnicity_handler,
     most_negative_habit_gender_handler,
+    most_positive_habit_age_handler,
+    most_positive_habit_gender_handler,
+    most_positive_habit_ethnicity_handler,
     disease_trend_over_time_handler, 
     health_trend_over_time_handler,
     disease_by_age_on_top5_handler,
@@ -99,6 +102,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .routes(routes!(crate::routes::most_negative_habit_age_handler))
         .routes(routes!(crate::routes::most_negative_habit_gender_handler))
         .routes(routes!(crate::routes::most_negative_habit_ethnicity_handler))
+        .routes(routes!(crate::routes::most_positive_habit_age_handler))
+        .routes(routes!(crate::routes::most_positive_habit_gender_handler))
+        .routes(routes!(crate::routes::most_positive_habit_ethnicity_handler))
         .routes(routes!(crate::routes::disease_trend_over_time_handler))
         .routes(routes!(crate::routes::health_trend_over_time_handler))
         .routes(routes!(crate::routes::disease_by_age_on_top5_handler))
